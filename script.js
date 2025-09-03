@@ -25,6 +25,14 @@ let cucumbers = [];
 const NUM_CUCUMBERS = 5;
 const GREEN = 'rgb(0, 128, 0)'; // Colore per il cetriolo di fallback
 
+// Fragolina
+let strawberryImage = new Image();
+const STRAWBERRY_SIZE = 30;
+let strawberryX, strawberryY;
+let strawberrySpeedX, strawberrySpeedY;
+const STRAWBERRY_BASE_SPEED = 3; // Velocità base della fragolina
+const RED = 'rgb(255, 0, 0)'; // Colore per la fragolina di fallback
+
 // Punteggio
 let score = 0;
 const FONT_SIZE = 24;
@@ -51,11 +59,16 @@ function placeBananas() {
         let y = Math.random() * (SCREEN_HEIGHT - BANANA_SIZE);
         let newBanana = { x: x, y: y, width: BANANA_SIZE, height: BANANA_SIZE };
         let overlap = false;
-        // Controlla che non si sovrapponga a cetrioli già esistenti
+        // Controlla che non si sovrapponga a cetrioli o fragolina già esistenti
         for (let cucumber of cucumbers) {
             if (checkCollision(newBanana, cucumber)) {
                 overlap = true;
                 break;
+            }
+        }
+        if (!overlap && strawberryX !== undefined) { // Controlla anche la fragolina se è già posizionata
+            if (checkCollision(newBanana, { x: strawberryX, y: strawberryY, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE })) {
+                overlap = true;
             }
         }
         if (!overlap && !checkCollision(newBanana, { x: playerX, y: playerY, width: PLAYER_SIZE, height: PLAYER_SIZE })) {
@@ -71,11 +84,16 @@ function placeCucumbers() {
         let y = Math.random() * (SCREEN_HEIGHT - CUCUMBER_SIZE);
         let newCucumber = { x: x, y: y, width: CUCUMBER_SIZE, height: CUCUMBER_SIZE };
         let overlap = false;
-        // Controlla che non si sovrapponga a banane già esistenti o al giocatore
+        // Controlla che non si sovrapponga a banane o fragolina già esistenti
         for (let banana of bananas) {
             if (checkCollision(newCucumber, banana)) {
                 overlap = true;
                 break;
+            }
+        }
+        if (!overlap && strawberryX !== undefined) { // Controlla anche la fragolina se è già posizionata
+            if (checkCollision(newCucumber, { x: strawberryX, y: strawberryY, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE })) {
+                overlap = true;
             }
         }
         if (!overlap && !checkCollision(newCucumber, { x: playerX, y: playerY, width: PLAYER_SIZE, height: PLAYER_SIZE })) {
@@ -84,13 +102,24 @@ function placeCucumbers() {
     }
 }
 
+function placeStrawberry() {
+    // Posiziona la fragolina in una posizione casuale iniziale
+    strawberryX = Math.random() * (SCREEN_WIDTH - STRAWBERRY_SIZE);
+    strawberryY = Math.random() * (SCREEN_HEIGHT - STRAWBERRY_SIZE);
+
+    // Dà una velocità iniziale casuale
+    strawberrySpeedX = (Math.random() < 0.5 ? 1 : -1) * STRAWBERRY_BASE_SPEED;
+    strawberrySpeedY = (Math.random() < 0.5 ? 1 : -1) * STRAWBERRY_BASE_SPEED;
+}
+
 function resetGame() {
     gameOver = false;
     score = 0;
     playerX = (SCREEN_WIDTH - PLAYER_SIZE) / 2;
     playerY = (SCREEN_HEIGHT - PLAYER_SIZE) / 2;
-    placeBananas(); // Prima le banane
-    placeCucumbers(); // Poi i cetrioli, evitando le banane
+    placeStrawberry(); // Prima la fragolina (per non sovrapporla)
+    placeBananas();    // Poi le banane
+    placeCucumbers();  // Poi i cetrioli
 }
 
 function updateGame() {
@@ -116,6 +145,18 @@ function updateGame() {
 
     let playerRect = { x: playerX, y: playerY, width: PLAYER_SIZE, height: PLAYER_SIZE };
 
+    // --- Movimento della fragolina ---
+    strawberryX += strawberrySpeedX;
+    strawberryY += strawberrySpeedY;
+
+    // Rimbalzo sui bordi per la fragolina
+    if (strawberryX + STRAWBERRY_SIZE > SCREEN_WIDTH || strawberryX < 0) {
+        strawberrySpeedX *= -1;
+    }
+    if (strawberryY + STRAWBERRY_SIZE > SCREEN_HEIGHT || strawberryY < 0) {
+        strawberrySpeedY *= -1;
+    }
+
     // Collisioni con le banane
     let bananasToRemove = [];
     bananas.forEach((banana, index) => {
@@ -130,9 +171,10 @@ function updateGame() {
         bananas.splice(bananasToRemove[i], 1);
     }
 
-    // Se tutte le banane sono state raccolte, riposizionale
+    // Se tutte le banane sono state raccolte, riposizionale e anche i cetrioli
     if (bananas.length === 0) {
         placeBananas();
+        placeCucumbers(); // Riposiziona anche i cetrioli
     }
 
     // Collisioni con i cetrioli
@@ -141,6 +183,12 @@ function updateGame() {
             gameOver = true;
             break;
         }
+    }
+
+    // Collisioni con la fragolina
+    let strawberryRect = { x: strawberryX, y: strawberryY, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE };
+    if (checkCollision(playerRect, strawberryRect)) {
+        gameOver = true;
     }
 }
 
@@ -176,6 +224,17 @@ function drawGame() {
             ctx.fill();
         }
     });
+
+    // Disegna la fragolina
+    if (strawberryImage.complete && strawberryImage.naturalWidth > 0) {
+        ctx.drawImage(strawberryImage, strawberryX, strawberryY, STRAWBERRY_SIZE, STRAWBERRY_SIZE);
+    } else {
+        // Disegna un cerchio rosso come fallback
+        ctx.fillStyle = RED;
+        ctx.beginPath();
+        ctx.arc(strawberryX + STRAWBERRY_SIZE / 2, strawberryY + STRAWBERRY_SIZE / 2, STRAWBERRY_SIZE / 2, 0, Math.PI * 2);
+        ctx.fill();
+    }
 
     // Disegna il punteggio
     ctx.fillStyle = FONT_COLOR;
@@ -229,12 +288,12 @@ window.addEventListener('keyup', (e) => {
 
 // Carica tutte le immagini e poi avvia il gioco
 let imagesLoaded = 0;
-const totalImages = 3; // player, banana, cucumber
+const totalImages = 4; // player, banana, cucumber, strawberry
 
 function imageLoaded() {
     imagesLoaded++;
     if (imagesLoaded === totalImages) {
-        resetGame(); // Inizializza il gioco (posiziona banane e cetrioli)
+        resetGame(); // Inizializza il gioco (posiziona banane, cetrioli, fragolina)
         loop();     // Avvia il game loop
     }
 }
@@ -257,5 +316,12 @@ cucumberImage.src = 'assets/cetriolo.png';
 cucumberImage.onload = imageLoaded;
 cucumberImage.onerror = () => {
     console.error("Errore caricamento immagine cetriolo.");
+    imageLoaded(); // Conta come caricata anche se con errore
+};
+
+strawberryImage.src = 'assets/fragolina.png';
+strawberryImage.onload = imageLoaded;
+strawberryImage.onerror = () => {
+    console.error("Errore caricamento immagine fragolina.");
     imageLoaded(); // Conta come caricata anche se con errore
 };
