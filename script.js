@@ -60,31 +60,12 @@ let keys = {
 
 // --- Sfondi dinamici ---
 const BACKGROUND_IMAGE_URLS = [
-    'https://images.pexels.com/photos/3304199/pexels-photo-3304199.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Foresta 1
-    'https://images.pexels.com/photos/1036399/pexels-photo-1036399.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Spiaggia 1
-    'https://images.pexels.com/photos/2086208/pexels-photo-2086208.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Deserto 1
-    'https://images.pexels.com/photos/1563256/pexels-photo-1563256.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Lago di montagna 1
-    'https://images.pexels.com/photos/236111/pexels-photo-236111.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',  // Parco cittadino 1
-    'https://images.pexels.com/photos/17228203/pexels-photo-17228203/free-photo-of-buildings-in-the-city-at-night.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Città notturna
-    'https://images.pexels.com/photos/2150/sky-space-deep-space-galaxy.jpg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Spazio
-    'https://images.pexels.com/photos/1749/abstract-light-dark-blue.jpg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Astratto blu
-    'https://images.pexels.com/photos/36717/amazing-beautiful-beauty-blue.jpg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Montagne azzurre
-    'https://images.pexels.com/photos/1206412/pexels-photo-1206412.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Strada in foresta
-    'https://images.pexels.com/photos/235615/pexels-photo-235615.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Fiume nella natura
-    'https://images.pexels.com/photos/355904/pexels-photo-355904.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Campo di fiori
-    'https://images.pexels.com/photos/346529/pexels-photo-346529.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Via lattea
-    'https://images.pexels.com/photos/1323550/pexels-photo-1323550.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Onde del mare
-    'https://images.pexels.com/photos/108941/pexels-photo-108941.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Montagne innevate
-    'https://images.pexels.com/photos/459225/pexels-photo-459225.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Alberi d'autunno
-    'https://images.pexels.com/photos/1054218/pexels-photo-1054218.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Cascata
-    'https://images.pexels.com/photos/1004620/pexels-photo-1004620.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Fari
-    'https://images.pexels.com/photos/268533/pexels-photo-268533.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Paesaggio verde
-    'https://images.pexels.com/photos/206359/pexels-photo-206359.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Aurora boreale
-    'https://images.pexels.com/photos/417054/pexels-photo-417054.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Deserto al tramonto
-    'https://images.pexels.com/photos/1107717/pexels-photo-1107717.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Strada di montagna
-    'https://images.pexels.com/photos/358457/pexels-photo-358457.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Mare calmo
-    'https://images.pexels.com/photos/1486972/pexels-photo-1486972.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Giungla
-    'https://images.pexels.com/photos/5439/nature-forest-trees-path.jpg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'  // Sentiero nel bosco
+    'bg/super_mario.png',
+    'bg/pacman.png',
+    'bg/donkey_kong.png',
+    'bg/metal_slug.png',
+    'bg/street_fighter.png',
+    'bg/mortal_kombat.png'
 ];
 let currentBackgroundIndex = 0;
 let backgroundImage = new Image();
