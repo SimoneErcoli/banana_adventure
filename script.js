@@ -40,8 +40,9 @@ let potatoX, potatoY;
 const POTATO_SPEED = 2; // Velocità di caduta della patata
 const BROWN = 'rgb(139, 69, 19)'; // Colore per la patata di fallback
 
-// Punteggio
-let score = 0;
+// Punteggio e conteggi
+let bananasCollected = 0; // Nuovo contatore per le banane
+let cucumbersCollected = 0; // Nuovo contatore per i cetrioli
 const FONT_SIZE = 24;
 const FONT_COLOR = 'black';
 const FONT_FAMILY = 'Arial';
@@ -66,7 +67,7 @@ function checkCollision(rect1, rect2) {
 }
 
 // Funzione generica per trovare una posizione non sovrapposta
-function findNonOverlappingPosition(size, excludeRects = []) {
+function findNonOverlappingPosition(size, excludeRects = [], isFalling = false) {
     let newRect;
     let overlap;
     let attempts = 0;
@@ -74,12 +75,23 @@ function findNonOverlappingPosition(size, excludeRects = []) {
 
     do {
         overlap = false;
-        newRect = {
-            x: Math.random() * (SCREEN_WIDTH - size),
-            y: Math.random() * (SCREEN_HEIGHT - size),
-            width: size,
-            height: size
-        };
+        // Se l'oggetto cade, lo posizioniamo solo in alto
+        if (isFalling) {
+            newRect = {
+                x: Math.random() * (SCREEN_WIDTH - size),
+                y: -size, // Inizia fuori dallo schermo in alto
+                width: size,
+                height: size
+            };
+        } else {
+            newRect = {
+                x: Math.random() * (SCREEN_WIDTH - size),
+                y: Math.random() * (SCREEN_HEIGHT - size),
+                width: size,
+                height: size
+            };
+        }
+
         for (let excludeRect of excludeRects) {
             if (checkCollision(newRect, excludeRect)) {
                 overlap = true;
@@ -143,19 +155,29 @@ function placeStrawberry() {
 }
 
 function placePotato() {
-    // Posiziona la patata in alto, in una posizione X casuale
-    potatoX = Math.random() * (SCREEN_WIDTH - POTATO_SIZE);
-    potatoY = -POTATO_SIZE; // Inizia appena fuori dallo schermo in alto
+    let excludeRects = [{ x: playerX, y: playerY, width: PLAYER_SIZE, height: PLAYER_SIZE }]
+                            .concat(bananas)
+                            .concat(cucumbers)
+                            .concat([{ x: strawberryX, y: strawberryY, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE }]);
+    let newPotatoRect = findNonOverlappingPosition(POTATO_SIZE, excludeRects, true); // true per isFalling
+    if (newPotatoRect) {
+        potatoX = newPotatoRect.x;
+        potatoY = newPotatoRect.y;
+    } else { // Fallback
+        potatoX = Math.random() * (SCREEN_WIDTH - POTATO_SIZE);
+        potatoY = -POTATO_SIZE;
+    }
 }
 
 function resetGame() {
     gameOver = false;
-    score = 0;
+    bananasCollected = 0; // Reset del contatore banane
+    cucumbersCollected = 0; // Reset del contatore cetrioli
     playerX = (SCREEN_WIDTH - PLAYER_SIZE) / 2;
     playerY = (SCREEN_HEIGHT - PLAYER_SIZE) / 2;
     
     // Reset di tutti gli oggetti in un ordine che evita sovrapposizioni iniziali
-    placePotato(); // Posiziona per prima la patata
+    placePotato();
     placeStrawberry();
     placeBananas();
     placeCucumbers();
@@ -208,7 +230,7 @@ function updateGame() {
     bananas.forEach((banana, index) => {
         if (checkCollision(playerRect, banana)) {
             bananasToRemove.push(index);
-            score += 1;
+            bananasCollected += 1; // Incrementa il contatore delle banane
         }
     });
 
@@ -217,27 +239,38 @@ function updateGame() {
         bananas.splice(bananasToRemove[i], 1);
     }
 
-    // Se tutte le banane sono state raccolte, riposizionale e anche i cetrioli
+    // Se tutte le banane sono state raccolte, riposizionale
     if (bananas.length === 0) {
         placeBananas();
-        placeCucumbers(); // Riposiziona anche i cetrioli
     }
 
-    // Collisioni con i cetrioli
-    for (let cucumber of cucumbers) {
+    // Collisioni con i cetrioli (ORA SI RACCOLGONO)
+    let cucumbersToRemove = [];
+    cucumbers.forEach((cucumber, index) => {
         if (checkCollision(playerRect, cucumber)) {
-            gameOver = true;
-            break;
+            cucumbersToRemove.push(index);
+            cucumbersCollected += 1; // Incrementa il contatore dei cetrioli
         }
+    });
+
+    // Rimuovi i cetrioli raccolti
+    for (let i = cucumbersToRemove.length - 1; i >= 0; i--) {
+        cucumbers.splice(cucumbersToRemove[i], 1);
     }
 
-    // Collisioni con la fragolina
+    // Se tutti i cetrioli sono stati raccolti, riposizionale
+    if (cucumbers.length === 0) {
+        placeCucumbers();
+    }
+
+
+    // Collisioni con la fragolina (CAUSA GAME OVER)
     let strawberryRect = { x: strawberryX, y: strawberryY, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE };
     if (checkCollision(playerRect, strawberryRect)) {
         gameOver = true;
     }
 
-    // Collisioni con la patata
+    // Collisioni con la patata (CAUSA GAME OVER)
     let potatoRect = { x: potatoX, y: potatoY, width: POTATO_SIZE, height: POTATO_SIZE };
     if (checkCollision(playerRect, potatoRect)) {
         gameOver = true;
@@ -300,10 +333,11 @@ function drawGame() {
     }
 
 
-    // Disegna il punteggio
+    // Disegna i contatori
     ctx.fillStyle = FONT_COLOR;
     ctx.font = `${FONT_SIZE}px ${FONT_FAMILY}`;
-    ctx.fillText(`Punteggio: ${score}`, 10, 30); // Posizione in alto a sinistra
+    ctx.fillText(`Banane: ${bananasCollected}`, 10, 30);
+    ctx.fillText(`Cetrioli: ${cucumbersCollected}`, 10, 60); // Nuova linea per i cetrioli
 
     // Messaggio di Game Over
     if (gameOver) {
@@ -351,12 +385,12 @@ const totalImages = 5; // player, banana, cucumber, strawberry, potato
 function imageLoaded() {
     imagesLoaded++;
     if (imagesLoaded === totalImages) {
-        resetGame(); // Inizializza il gioco (posiziona banane, cetrioli, fragolina, patata)
+        resetGame(); // Inizializza il gioco
         loop();     // Avvia il game loop
     }
 }
 
-playerImage.src = 'assets/faccia.png';
+playerImage.src = 'assets/faccia.jpg';
 playerImage.onload = imageLoaded;
 playerImage.onerror = () => {
     console.error("Errore caricamento immagine giocatore.");
