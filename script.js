@@ -41,8 +41,8 @@ const POTATO_SPEED = 2; // Velocità di caduta della patata
 const BROWN = 'rgb(139, 69, 19)'; // Colore per la patata di fallback
 
 // Punteggio e conteggi
-let bananasCollected = 0; // Nuovo contatore per le banane
-let cucumbersCollected = 0; // Nuovo contatore per i cetrioli
+let bananasCollected = 0;
+let cucumbersCollected = 0;
 const FONT_SIZE = 24;
 const FONT_COLOR = 'black';
 const FONT_FAMILY = 'Arial';
@@ -57,6 +57,38 @@ let keys = {
     ArrowLeft: false,
     ArrowRight: false
 };
+
+// --- Sfondi dinamici ---
+const BACKGROUND_IMAGE_URLS = [
+    'https://images.pexels.com/photos/3304199/pexels-photo-3304199.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Foresta 1
+    'https://images.pexels.com/photos/1036399/pexels-photo-1036399.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Spiaggia 1
+    'https://images.pexels.com/photos/2086208/pexels-photo-2086208.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Deserto 1
+    'https://images.pexels.com/photos/1563256/pexels-photo-1563256.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Lago di montagna 1
+    'https://images.pexels.com/photos/236111/pexels-photo-236111.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',  // Parco cittadino 1
+    'https://images.pexels.com/photos/17228203/pexels-photo-17228203/free-photo-of-buildings-in-the-city-at-night.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Città notturna
+    'https://images.pexels.com/photos/2150/sky-space-deep-space-galaxy.jpg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Spazio
+    'https://images.pexels.com/photos/1749/abstract-light-dark-blue.jpg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Astratto blu
+    'https://images.pexels.com/photos/36717/amazing-beautiful-beauty-blue.jpg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Montagne azzurre
+    'https://images.pexels.com/photos/1206412/pexels-photo-1206412.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Strada in foresta
+    'https://images.pexels.com/photos/235615/pexels-photo-235615.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Fiume nella natura
+    'https://images.pexels.com/photos/355904/pexels-photo-355904.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Campo di fiori
+    'https://images.pexels.com/photos/346529/pexels-photo-346529.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Via lattea
+    'https://images.pexels.com/photos/1323550/pexels-photo-1323550.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Onde del mare
+    'https://images.pexels.com/photos/108941/pexels-photo-108941.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Montagne innevate
+    'https://images.pexels.com/photos/459225/pexels-photo-459225.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Alberi d'autunno
+    'https://images.pexels.com/photos/1054218/pexels-photo-1054218.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Cascata
+    'https://images.pexels.com/photos/1004620/pexels-photo-1004620.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Fari
+    'https://images.pexels.com/photos/268533/pexels-photo-268533.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Paesaggio verde
+    'https://images.pexels.com/photos/206359/pexels-photo-206359.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Aurora boreale
+    'https://images.pexels.com/photos/417054/pexels-photo-417054.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Deserto al tramonto
+    'https://images.pexels.com/photos/1107717/pexels-photo-1107717.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Strada di montagna
+    'https://images.pexels.com/photos/358457/pexels-photo-358457.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Mare calmo
+    'https://images.pexels.com/photos/1486972/pexels-photo-1486972.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', // Giungla
+    'https://images.pexels.com/photos/5439/nature-forest-trees-path.jpg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'  // Sentiero nel bosco
+];
+let currentBackgroundIndex = 0;
+let backgroundImage = new Image();
+
 
 // --- Funzioni di utilità per le collisioni ---
 function checkCollision(rect1, rect2) {
@@ -75,11 +107,10 @@ function findNonOverlappingPosition(size, excludeRects = [], isFalling = false) 
 
     do {
         overlap = false;
-        // Se l'oggetto cade, lo posizioniamo solo in alto
         if (isFalling) {
             newRect = {
                 x: Math.random() * (SCREEN_WIDTH - size),
-                y: -size, // Inizia fuori dallo schermo in alto
+                y: -size,
                 width: size,
                 height: size
             };
@@ -103,7 +134,6 @@ function findNonOverlappingPosition(size, excludeRects = [], isFalling = false) 
 
     return newRect;
 }
-
 
 // --- Funzioni di gioco ---
 
@@ -144,12 +174,11 @@ function placeStrawberry() {
     if (newStrawberryRect) {
         strawberryX = newStrawberryRect.x;
         strawberryY = newStrawberryRect.y;
-    } else { // Fallback se non trova una posizione, la mette al centro
+    } else {
         strawberryX = (SCREEN_WIDTH - STRAWBERRY_SIZE) / 2;
         strawberryY = (SCREEN_HEIGHT - STRAWBERRY_SIZE) / 2;
     }
 
-    // Dà una velocità iniziale casuale
     strawberrySpeedX = (Math.random() < 0.5 ? 1 : -1) * STRAWBERRY_BASE_SPEED;
     strawberrySpeedY = (Math.random() < 0.5 ? 1 : -1) * STRAWBERRY_BASE_SPEED;
 }
@@ -159,34 +188,41 @@ function placePotato() {
                             .concat(bananas)
                             .concat(cucumbers)
                             .concat([{ x: strawberryX, y: strawberryY, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE }]);
-    let newPotatoRect = findNonOverlappingPosition(POTATO_SIZE, excludeRects, true); // true per isFalling
+    let newPotatoRect = findNonOverlappingPosition(POTATO_SIZE, excludeRects, true);
     if (newPotatoRect) {
         potatoX = newPotatoRect.x;
         potatoY = newPotatoRect.y;
-    } else { // Fallback
+    } else {
         potatoX = Math.random() * (SCREEN_WIDTH - POTATO_SIZE);
         potatoY = -POTATO_SIZE;
     }
 }
 
+function loadNextBackground() {
+    currentBackgroundIndex = (currentBackgroundIndex + 1) % BACKGROUND_IMAGE_URLS.length;
+    backgroundImage.src = BACKGROUND_IMAGE_URLS[currentBackgroundIndex];
+}
+
 function resetGame() {
     gameOver = false;
-    bananasCollected = 0; // Reset del contatore banane
-    cucumbersCollected = 0; // Reset del contatore cetrioli
+    bananasCollected = 0;
+    cucumbersCollected = 0;
     playerX = (SCREEN_WIDTH - PLAYER_SIZE) / 2;
     playerY = (SCREEN_HEIGHT - PLAYER_SIZE) / 2;
     
-    // Reset di tutti gli oggetti in un ordine che evita sovrapposizioni iniziali
     placePotato();
     placeStrawberry();
     placeBananas();
     placeCucumbers();
+    
+    // Inizializza o cambia lo sfondo
+    currentBackgroundIndex = -1; // Per assicurare che loadNextBackground carichi il primo (index 0)
+    loadNextBackground();
 }
 
 function updateGame() {
     if (gameOver) return;
 
-    // Aggiorna posizione giocatore in base ai tasti premuti
     if (keys.ArrowUp) {
         playerY -= playerSpeed;
     }
@@ -200,17 +236,14 @@ function updateGame() {
         playerX += playerSpeed;
     }
 
-    // Limiti della schermata per il giocatore
     playerX = Math.max(0, Math.min(playerX, SCREEN_WIDTH - PLAYER_SIZE));
     playerY = Math.max(0, Math.min(playerY, SCREEN_HEIGHT - PLAYER_SIZE));
 
     let playerRect = { x: playerX, y: playerY, width: PLAYER_SIZE, height: PLAYER_SIZE };
 
-    // --- Movimento della fragolina ---
     strawberryX += strawberrySpeedX;
     strawberryY += strawberrySpeedY;
 
-    // Rimbalzo sui bordi per la fragolina
     if (strawberryX + STRAWBERRY_SIZE > SCREEN_WIDTH || strawberryX < 0) {
         strawberrySpeedX *= -1;
     }
@@ -218,55 +251,47 @@ function updateGame() {
         strawberrySpeedY *= -1;
     }
 
-    // --- Movimento della patata ---
     potatoY += POTATO_SPEED;
     if (potatoY > SCREEN_HEIGHT) {
-        placePotato(); // Riposiziona la patata in alto quando esce dallo schermo
+        placePotato();
     }
 
-
-    // Collisioni con le banane
     let bananasToRemove = [];
     bananas.forEach((banana, index) => {
         if (checkCollision(playerRect, banana)) {
             bananasToRemove.push(index);
-            bananasCollected += 1; // Incrementa il contatore delle banane
+            bananasCollected += 1;
         }
     });
 
-    // Rimuovi le banane raccolte (dal più grande indice al più piccolo per evitare problemi di indice)
     for (let i = bananasToRemove.length - 1; i >= 0; i--) {
         bananas.splice(bananasToRemove[i], 1);
     }
 
-    // Collisioni con i cetrioli
     let cucumbersToRemove = [];
     cucumbers.forEach((cucumber, index) => {
         if (checkCollision(playerRect, cucumber)) {
             cucumbersToRemove.push(index);
-            cucumbersCollected += 1; // Incrementa il contatore dei cetrioli
+            cucumbersCollected += 1;
         }
     });
 
-    // Rimuovi i cetrioli raccolti
     for (let i = cucumbersToRemove.length - 1; i >= 0; i--) {
         cucumbers.splice(cucumbersToRemove[i], 1);
     }
 
-    // --- Logica di rigenerazione combinata per banane e cetrioli ---
+    // Rigenerazione combinata di banane e cetrioli
     if (bananas.length === 0 && cucumbers.length === 0) {
         placeBananas();
         placeCucumbers();
+        loadNextBackground(); // Cambia lo sfondo qui
     }
 
-
-    // Collisioni con la fragolina (CAUSA GAME OVER)
     let strawberryRect = { x: strawberryX, y: strawberryY, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE };
     if (checkCollision(playerRect, strawberryRect)) {
         gameOver = true;
     }
 
-    // Collisioni con la patata (CAUSA GAME OVER)
     let potatoRect = { x: potatoX, y: potatoY, width: POTATO_SIZE, height: POTATO_SIZE };
     if (checkCollision(playerRect, potatoRect)) {
         gameOver = true;
@@ -274,18 +299,22 @@ function updateGame() {
 }
 
 function drawGame() {
-    // Pulisce la canvas
     ctx.clearRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    // Disegna il giocatore
+    // Disegna lo sfondo per primo
+    if (backgroundImage.complete && backgroundImage.naturalWidth > 0) {
+        ctx.drawImage(backgroundImage, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    } else {
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    }
+
     ctx.drawImage(playerImage, playerX, playerY, PLAYER_SIZE, PLAYER_SIZE);
 
-    // Disegna le banane
     bananas.forEach(banana => {
         if (bananaImage.complete && bananaImage.naturalWidth > 0) {
             ctx.drawImage(bananaImage, banana.x, banana.y, banana.width, banana.height);
         } else {
-            // Disegna un cerchio giallo come fallback
             ctx.fillStyle = YELLOW;
             ctx.beginPath();
             ctx.arc(banana.x + banana.width / 2, banana.y + banana.height / 2, banana.width / 2, 0, Math.PI * 2);
@@ -293,12 +322,10 @@ function drawGame() {
         }
     });
 
-    // Disegna i cetrioli
     cucumbers.forEach(cucumber => {
         if (cucumberImage.complete && cucumberImage.naturalWidth > 0) {
             ctx.drawImage(cucumberImage, cucumber.x, cucumber.y, cucumber.width, cucumber.height);
         } else {
-            // Disegna un cerchio verde come fallback
             ctx.fillStyle = GREEN;
             ctx.beginPath();
             ctx.arc(cucumber.x + cucumber.width / 2, cucumber.y + cucumber.height / 2, cucumber.width / 2, 0, Math.PI * 2);
@@ -306,36 +333,29 @@ function drawGame() {
         }
     });
 
-    // Disegna la fragolina
     if (strawberryImage.complete && strawberryImage.naturalWidth > 0) {
         ctx.drawImage(strawberryImage, strawberryX, strawberryY, STRAWBERRY_SIZE, STRAWBERRY_SIZE);
     } else {
-        // Disegna un cerchio rosso come fallback
         ctx.fillStyle = RED;
         ctx.beginPath();
         ctx.arc(strawberryX + STRAWBERRY_SIZE / 2, strawberryY + STRAWBERRY_SIZE / 2, STRAWBERRY_SIZE / 2, 0, Math.PI * 2);
         ctx.fill();
     }
 
-    // Disegna la patata
     if (potatoImage.complete && potatoImage.naturalWidth > 0) {
         ctx.drawImage(potatoImage, potatoX, potatoY, POTATO_SIZE, POTATO_SIZE);
     } else {
-        // Disegna un cerchio marrone come fallback
         ctx.fillStyle = BROWN;
         ctx.beginPath();
         ctx.arc(potatoX + POTATO_SIZE / 2, potatoY + POTATO_SIZE / 2, POTATO_SIZE / 2, 0, Math.PI * 2);
         ctx.fill();
     }
 
-
-    // Disegna i contatori
     ctx.fillStyle = FONT_COLOR;
     ctx.font = `${FONT_SIZE}px ${FONT_FAMILY}`;
     ctx.fillText(`Banane: ${bananasCollected}`, 10, 30);
-    ctx.fillText(`Cetrioli: ${cucumbersCollected}`, 10, 60); // Nuova linea per i cetrioli
+    ctx.fillText(`Cetrioli: ${cucumbersCollected}`, 10, 60);
 
-    // Messaggio di Game Over
     if (gameOver) {
         ctx.fillStyle = 'red';
         ctx.font = `48px ${FONT_FAMILY}`;
@@ -343,7 +363,7 @@ function drawGame() {
         ctx.fillText("GAME OVER!", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 24);
         ctx.font = `24px ${FONT_FAMILY}`;
         ctx.fillText("Premi 'R' per riavviare", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 24);
-        ctx.textAlign = 'left'; // Reset per altri testi
+        ctx.textAlign = 'left';
     }
 }
 
@@ -355,12 +375,10 @@ function loop() {
     }
 }
 
-
-// --- Event Listeners per il movimento e il riavvio ---
 window.addEventListener('keydown', (e) => {
     if (gameOver && e.key === 'r') {
         resetGame();
-        loop(); // Avvia un nuovo ciclo di gioco
+        loop();
     } else if (!gameOver && keys.hasOwnProperty(e.key)) {
         keys[e.key] = true;
     }
@@ -373,16 +391,14 @@ window.addEventListener('keyup', (e) => {
 });
 
 // --- Inizializzazione ---
-
-// Carica tutte le immagini e poi avvia il gioco
 let imagesLoaded = 0;
-const totalImages = 5; // player, banana, cucumber, strawberry, potato
+const totalImages = 6; 
 
 function imageLoaded() {
     imagesLoaded++;
     if (imagesLoaded === totalImages) {
-        resetGame(); // Inizializza il gioco
-        loop();     // Avvia il game loop
+        resetGame();
+        loop();
     }
 }
 
@@ -390,33 +406,40 @@ playerImage.src = 'assets/faccia.png';
 playerImage.onload = imageLoaded;
 playerImage.onerror = () => {
     console.error("Errore caricamento immagine giocatore.");
-    imageLoaded(); // Conta come caricata anche se con errore
+    imageLoaded();
 };
 
 bananaImage.src = 'assets/banana.png';
 bananaImage.onload = imageLoaded;
 bananaImage.onerror = () => {
     console.error("Errore caricamento immagine banana.");
-    imageLoaded(); // Conta come caricata anche se con errore
+    imageLoaded();
 };
 
 cucumberImage.src = 'assets/cetriolo.png';
 cucumberImage.onload = imageLoaded;
 cucumberImage.onerror = () => {
     console.error("Errore caricamento immagine cetriolo.");
-    imageLoaded(); // Conta come caricata anche se con errore
+    imageLoaded();
 };
 
 strawberryImage.src = 'assets/fragolina.png';
 strawberryImage.onload = imageLoaded;
 strawberryImage.onerror = () => {
     console.error("Errore caricamento immagine fragolina.");
-    imageLoaded(); // Conta come caricata anche se con errore
+    imageLoaded();
 };
 
 potatoImage.src = 'assets/patata.png';
 potatoImage.onload = imageLoaded;
 potatoImage.onerror = () => {
     console.error("Errore caricamento immagine patata.");
-    imageLoaded(); // Conta come caricata anche se con errore
+    imageLoaded();
+};
+
+backgroundImage.src = BACKGROUND_IMAGE_URLS[0];
+backgroundImage.onload = imageLoaded;
+backgroundImage.onerror = () => {
+    console.error("Errore caricamento immagine sfondo iniziale.");
+    imageLoaded();
 };
