@@ -18,11 +18,21 @@ let bananas = [];
 const NUM_BANANAS = 10;
 const YELLOW = 'rgb(255, 255, 0)'; // Colore per la banana di fallback
 
+// Cetrioli
+let cucumberImage = new Image();
+const CUCUMBER_SIZE = 40;
+let cucumbers = [];
+const NUM_CUCUMBERS = 5;
+const GREEN = 'rgb(0, 128, 0)'; // Colore per il cetriolo di fallback
+
 // Punteggio
 let score = 0;
 const FONT_SIZE = 24;
 const FONT_COLOR = 'black';
 const FONT_FAMILY = 'Arial';
+
+// Stato del gioco
+let gameOver = false;
 
 // Gestione dei tasti premuti per il movimento continuo
 let keys = {
@@ -36,14 +46,56 @@ let keys = {
 
 function placeBananas() {
     bananas = [];
-    for (let i = 0; i < NUM_BANANAS; i++) {
+    while (bananas.length < NUM_BANANAS) {
         let x = Math.random() * (SCREEN_WIDTH - BANANA_SIZE);
         let y = Math.random() * (SCREEN_HEIGHT - BANANA_SIZE);
-        bananas.push({ x: x, y: y, width: BANANA_SIZE, height: BANANA_SIZE });
+        let newBanana = { x: x, y: y, width: BANANA_SIZE, height: BANANA_SIZE };
+        let overlap = false;
+        // Controlla che non si sovrapponga a cetrioli già esistenti
+        for (let cucumber of cucumbers) {
+            if (checkCollision(newBanana, cucumber)) {
+                overlap = true;
+                break;
+            }
+        }
+        if (!overlap && !checkCollision(newBanana, { x: playerX, y: playerY, width: PLAYER_SIZE, height: PLAYER_SIZE })) {
+            bananas.push(newBanana);
+        }
     }
 }
 
+function placeCucumbers() {
+    cucumbers = [];
+    while (cucumbers.length < NUM_CUCUMBERS) {
+        let x = Math.random() * (SCREEN_WIDTH - CUCUMBER_SIZE);
+        let y = Math.random() * (SCREEN_HEIGHT - CUCUMBER_SIZE);
+        let newCucumber = { x: x, y: y, width: CUCUMBER_SIZE, height: CUCUMBER_SIZE };
+        let overlap = false;
+        // Controlla che non si sovrapponga a banane già esistenti o al giocatore
+        for (let banana of bananas) {
+            if (checkCollision(newCucumber, banana)) {
+                overlap = true;
+                break;
+            }
+        }
+        if (!overlap && !checkCollision(newCucumber, { x: playerX, y: playerY, width: PLAYER_SIZE, height: PLAYER_SIZE })) {
+            cucumbers.push(newCucumber);
+        }
+    }
+}
+
+function resetGame() {
+    gameOver = false;
+    score = 0;
+    playerX = (SCREEN_WIDTH - PLAYER_SIZE) / 2;
+    playerY = (SCREEN_HEIGHT - PLAYER_SIZE) / 2;
+    placeBananas(); // Prima le banane
+    placeCucumbers(); // Poi i cetrioli, evitando le banane
+}
+
 function updateGame() {
+    if (gameOver) return;
+
     // Aggiorna posizione giocatore in base ai tasti premuti
     if (keys.ArrowUp) {
         playerY -= playerSpeed;
@@ -62,8 +114,9 @@ function updateGame() {
     playerX = Math.max(0, Math.min(playerX, SCREEN_WIDTH - PLAYER_SIZE));
     playerY = Math.max(0, Math.min(playerY, SCREEN_HEIGHT - PLAYER_SIZE));
 
-    // Collisioni con le banane
     let playerRect = { x: playerX, y: playerY, width: PLAYER_SIZE, height: PLAYER_SIZE };
+
+    // Collisioni con le banane
     let bananasToRemove = [];
     bananas.forEach((banana, index) => {
         if (checkCollision(playerRect, banana)) {
@@ -80,6 +133,14 @@ function updateGame() {
     // Se tutte le banane sono state raccolte, riposizionale
     if (bananas.length === 0) {
         placeBananas();
+    }
+
+    // Collisioni con i cetrioli
+    for (let cucumber of cucumbers) {
+        if (checkCollision(playerRect, cucumber)) {
+            gameOver = true;
+            break;
+        }
     }
 }
 
@@ -103,16 +164,42 @@ function drawGame() {
         }
     });
 
+    // Disegna i cetrioli
+    cucumbers.forEach(cucumber => {
+        if (cucumberImage.complete && cucumberImage.naturalWidth > 0) {
+            ctx.drawImage(cucumberImage, cucumber.x, cucumber.y, cucumber.width, cucumber.height);
+        } else {
+            // Disegna un cerchio verde come fallback
+            ctx.fillStyle = GREEN;
+            ctx.beginPath();
+            ctx.arc(cucumber.x + cucumber.width / 2, cucumber.y + cucumber.height / 2, cucumber.width / 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    });
+
     // Disegna il punteggio
     ctx.fillStyle = FONT_COLOR;
     ctx.font = `${FONT_SIZE}px ${FONT_FAMILY}`;
     ctx.fillText(`Punteggio: ${score}`, 10, 30); // Posizione in alto a sinistra
+
+    // Messaggio di Game Over
+    if (gameOver) {
+        ctx.fillStyle = 'red';
+        ctx.font = `48px ${FONT_FAMILY}`;
+        ctx.textAlign = 'center';
+        ctx.fillText("GAME OVER!", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 24);
+        ctx.font = `24px ${FONT_FAMILY}`;
+        ctx.fillText("Premi 'R' per riavviare", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 24);
+        ctx.textAlign = 'left'; // Reset per altri testi
+    }
 }
 
 function loop() {
     updateGame();
     drawGame();
-    requestAnimationFrame(loop);
+    if (!gameOver) {
+        requestAnimationFrame(loop);
+    }
 }
 
 function checkCollision(rect1, rect2) {
@@ -122,9 +209,12 @@ function checkCollision(rect1, rect2) {
            rect1.y + rect1.height > rect2.y;
 }
 
-// --- Event Listeners per il movimento ---
+// --- Event Listeners per il movimento e il riavvio ---
 window.addEventListener('keydown', (e) => {
-    if (keys.hasOwnProperty(e.key)) {
+    if (gameOver && e.key === 'r') {
+        resetGame();
+        loop(); // Avvia un nuovo ciclo di gioco
+    } else if (!gameOver && keys.hasOwnProperty(e.key)) {
         keys[e.key] = true;
     }
 });
@@ -137,36 +227,35 @@ window.addEventListener('keyup', (e) => {
 
 // --- Inizializzazione ---
 
-// Carica l'avatar del giocatore
+// Carica tutte le immagini e poi avvia il gioco
+let imagesLoaded = 0;
+const totalImages = 3; // player, banana, cucumber
+
+function imageLoaded() {
+    imagesLoaded++;
+    if (imagesLoaded === totalImages) {
+        resetGame(); // Inizializza il gioco (posiziona banane e cetrioli)
+        loop();     // Avvia il game loop
+    }
+}
+
 playerImage.src = 'assets/faccia.jpg';
-playerImage.onload = () => {
-    // Carica l'immagine della banana dopo quella del giocatore
-    bananaImage.src = 'assets/banana.png';
-    bananaImage.onload = () => {
-        // Avvia il gioco solo quando entrambe le immagini sono caricate
-        placeBananas();
-        loop();
-    };
-    bananaImage.onerror = () => {
-        console.error("Errore nel caricamento dell'immagine della banana. Useremo un segnaposto.");
-        // Non bloccare il gioco, avvia comunque
-        placeBananas();
-        loop();
-    };
-};
+playerImage.onload = imageLoaded;
 playerImage.onerror = () => {
-    console.error("Errore nel caricamento dell'immagine del giocatore. Assicurati che 'assets/faccia.jpg' esista e sia un'immagine valida.");
-    // Se l'immagine del giocatore non si carica, usa un segnaposto e avvia comunque
-    // Nota: in questo caso, playerImage.complete sarà false e disegneremo un fallback.
-    // Carica comunque la banana
-    bananaImage.src = 'assets/banana.png';
-    bananaImage.onload = () => {
-        placeBananas();
-        loop();
-    };
-    bananaImage.onerror = () => {
-        console.error("Errore nel caricamento dell'immagine della banana. Useremo un segnaposto.");
-        placeBananas();
-        loop();
-    };
+    console.error("Errore caricamento immagine giocatore.");
+    imageLoaded(); // Conta come caricata anche se con errore
+};
+
+bananaImage.src = 'assets/banana.png';
+bananaImage.onload = imageLoaded;
+bananaImage.onerror = () => {
+    console.error("Errore caricamento immagine banana.");
+    imageLoaded(); // Conta come caricata anche se con errore
+};
+
+cucumberImage.src = 'assets/cetriolo.png';
+cucumberImage.onload = imageLoaded;
+cucumberImage.onerror = () => {
+    console.error("Errore caricamento immagine cetriolo.");
+    imageLoaded(); // Conta come caricata anche se con errore
 };
