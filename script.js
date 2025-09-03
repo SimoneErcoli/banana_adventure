@@ -239,12 +239,7 @@ function updateGame() {
         bananas.splice(bananasToRemove[i], 1);
     }
 
-    // Se tutte le banane sono state raccolte, riposizionale
-    if (bananas.length === 0) {
-        placeBananas();
-    }
-
-    // Collisioni con i cetrioli (ORA SI RACCOLGONO)
+    // Collisioni con i cetrioli
     let cucumbersToRemove = [];
     cucumbers.forEach((cucumber, index) => {
         if (checkCollision(playerRect, cucumber)) {
@@ -258,8 +253,9 @@ function updateGame() {
         cucumbers.splice(cucumbersToRemove[i], 1);
     }
 
-    // Se tutti i cetrioli sono stati raccolti, riposizionale
-    if (cucumbers.length === 0) {
+    // --- Logica di rigenerazione combinata per banane e cetrioli ---
+    if (bananas.length === 0 && cucumbers.length === 0) {
+        placeBananas();
         placeCucumbers();
     }
 
