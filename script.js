@@ -356,7 +356,7 @@ function imageLoaded() {
     }
 }
 
-playerImage.src = 'assets/faccia.jpg';
+playerImage.src = 'assets/faccia.png';
 playerImage.onload = imageLoaded;
 playerImage.onerror = () => {
     console.error("Errore caricamento immagine giocatore.");
