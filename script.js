@@ -44,7 +44,7 @@ const BROWN = 'rgb(139, 69, 19)'; // Colore per la patata di fallback
 let bananasCollected = 0;
 let cucumbersCollected = 0;
 const FONT_SIZE = 24;
-const FONT_COLOR = 'black';
+const FONT_COLOR = 'red';
 const FONT_FAMILY = 'Arial';
 
 // Stato del gioco
@@ -292,7 +292,7 @@ function drawGame() {
         ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
     }
 
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
     ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     ctx.drawImage(playerImage, playerX, playerY, PLAYER_SIZE, PLAYER_SIZE);
