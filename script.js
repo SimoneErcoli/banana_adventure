@@ -33,6 +33,13 @@ let strawberrySpeedX, strawberrySpeedY;
 const STRAWBERRY_BASE_SPEED = 3; // Velocità base della fragolina
 const RED = 'rgb(255, 0, 0)'; // Colore per la fragolina di fallback
 
+// Patata
+let potatoImage = new Image();
+const POTATO_SIZE = 45;
+let potatoX, potatoY;
+const POTATO_SPEED = 2; // Velocità di caduta della patata
+const BROWN = 'rgb(139, 69, 19)'; // Colore per la patata di fallback
+
 // Punteggio
 let score = 0;
 const FONT_SIZE = 24;
@@ -50,29 +57,54 @@ let keys = {
     ArrowRight: false
 };
 
+// --- Funzioni di utilità per le collisioni ---
+function checkCollision(rect1, rect2) {
+    return rect1.x < rect2.x + rect2.width &&
+           rect1.x + rect1.width > rect2.x &&
+           rect1.y < rect2.y + rect2.height &&
+           rect1.y + rect1.height > rect2.y;
+}
+
+// Funzione generica per trovare una posizione non sovrapposta
+function findNonOverlappingPosition(size, excludeRects = []) {
+    let newRect;
+    let overlap;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 100;
+
+    do {
+        overlap = false;
+        newRect = {
+            x: Math.random() * (SCREEN_WIDTH - size),
+            y: Math.random() * (SCREEN_HEIGHT - size),
+            width: size,
+            height: size
+        };
+        for (let excludeRect of excludeRects) {
+            if (checkCollision(newRect, excludeRect)) {
+                overlap = true;
+                break;
+            }
+        }
+        attempts++;
+    } while (overlap && attempts < MAX_ATTEMPTS);
+
+    return newRect;
+}
+
+
 // --- Funzioni di gioco ---
 
 function placeBananas() {
     bananas = [];
     while (bananas.length < NUM_BANANAS) {
-        let x = Math.random() * (SCREEN_WIDTH - BANANA_SIZE);
-        let y = Math.random() * (SCREEN_HEIGHT - BANANA_SIZE);
-        let newBanana = { x: x, y: y, width: BANANA_SIZE, height: BANANA_SIZE };
-        let overlap = false;
-        // Controlla che non si sovrapponga a cetrioli o fragolina già esistenti
-        for (let cucumber of cucumbers) {
-            if (checkCollision(newBanana, cucumber)) {
-                overlap = true;
-                break;
-            }
-        }
-        if (!overlap && strawberryX !== undefined) { // Controlla anche la fragolina se è già posizionata
-            if (checkCollision(newBanana, { x: strawberryX, y: strawberryY, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE })) {
-                overlap = true;
-            }
-        }
-        if (!overlap && !checkCollision(newBanana, { x: playerX, y: playerY, width: PLAYER_SIZE, height: PLAYER_SIZE })) {
-            bananas.push(newBanana);
+        let excludeRects = [{ x: playerX, y: playerY, width: PLAYER_SIZE, height: PLAYER_SIZE }]
+                                .concat(cucumbers)
+                                .concat([{ x: strawberryX, y: strawberryY, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE }])
+                                .concat([{ x: potatoX, y: potatoY, width: POTATO_SIZE, height: POTATO_SIZE }]);
+        let newBananaRect = findNonOverlappingPosition(BANANA_SIZE, excludeRects);
+        if (newBananaRect) {
+            bananas.push(newBananaRect);
         }
     }
 }
@@ -80,36 +112,40 @@ function placeBananas() {
 function placeCucumbers() {
     cucumbers = [];
     while (cucumbers.length < NUM_CUCUMBERS) {
-        let x = Math.random() * (SCREEN_WIDTH - CUCUMBER_SIZE);
-        let y = Math.random() * (SCREEN_HEIGHT - CUCUMBER_SIZE);
-        let newCucumber = { x: x, y: y, width: CUCUMBER_SIZE, height: CUCUMBER_SIZE };
-        let overlap = false;
-        // Controlla che non si sovrapponga a banane o fragolina già esistenti
-        for (let banana of bananas) {
-            if (checkCollision(newCucumber, banana)) {
-                overlap = true;
-                break;
-            }
-        }
-        if (!overlap && strawberryX !== undefined) { // Controlla anche la fragolina se è già posizionata
-            if (checkCollision(newCucumber, { x: strawberryX, y: strawberryY, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE })) {
-                overlap = true;
-            }
-        }
-        if (!overlap && !checkCollision(newCucumber, { x: playerX, y: playerY, width: PLAYER_SIZE, height: PLAYER_SIZE })) {
-            cucumbers.push(newCucumber);
+        let excludeRects = [{ x: playerX, y: playerY, width: PLAYER_SIZE, height: PLAYER_SIZE }]
+                                .concat(bananas)
+                                .concat([{ x: strawberryX, y: strawberryY, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE }])
+                                .concat([{ x: potatoX, y: potatoY, width: POTATO_SIZE, height: POTATO_SIZE }]);
+        let newCucumberRect = findNonOverlappingPosition(CUCUMBER_SIZE, excludeRects);
+        if (newCucumberRect) {
+            cucumbers.push(newCucumberRect);
         }
     }
 }
 
 function placeStrawberry() {
-    // Posiziona la fragolina in una posizione casuale iniziale
-    strawberryX = Math.random() * (SCREEN_WIDTH - STRAWBERRY_SIZE);
-    strawberryY = Math.random() * (SCREEN_HEIGHT - STRAWBERRY_SIZE);
+    let excludeRects = [{ x: playerX, y: playerY, width: PLAYER_SIZE, height: PLAYER_SIZE }]
+                            .concat(bananas)
+                            .concat(cucumbers)
+                            .concat([{ x: potatoX, y: potatoY, width: POTATO_SIZE, height: POTATO_SIZE }]);
+    let newStrawberryRect = findNonOverlappingPosition(STRAWBERRY_SIZE, excludeRects);
+    if (newStrawberryRect) {
+        strawberryX = newStrawberryRect.x;
+        strawberryY = newStrawberryRect.y;
+    } else { // Fallback se non trova una posizione, la mette al centro
+        strawberryX = (SCREEN_WIDTH - STRAWBERRY_SIZE) / 2;
+        strawberryY = (SCREEN_HEIGHT - STRAWBERRY_SIZE) / 2;
+    }
 
     // Dà una velocità iniziale casuale
     strawberrySpeedX = (Math.random() < 0.5 ? 1 : -1) * STRAWBERRY_BASE_SPEED;
     strawberrySpeedY = (Math.random() < 0.5 ? 1 : -1) * STRAWBERRY_BASE_SPEED;
+}
+
+function placePotato() {
+    // Posiziona la patata in alto, in una posizione X casuale
+    potatoX = Math.random() * (SCREEN_WIDTH - POTATO_SIZE);
+    potatoY = -POTATO_SIZE; // Inizia appena fuori dallo schermo in alto
 }
 
 function resetGame() {
@@ -117,9 +153,12 @@ function resetGame() {
     score = 0;
     playerX = (SCREEN_WIDTH - PLAYER_SIZE) / 2;
     playerY = (SCREEN_HEIGHT - PLAYER_SIZE) / 2;
-    placeStrawberry(); // Prima la fragolina (per non sovrapporla)
-    placeBananas();    // Poi le banane
-    placeCucumbers();  // Poi i cetrioli
+    
+    // Reset di tutti gli oggetti in un ordine che evita sovrapposizioni iniziali
+    placePotato(); // Posiziona per prima la patata
+    placeStrawberry();
+    placeBananas();
+    placeCucumbers();
 }
 
 function updateGame() {
@@ -157,6 +196,13 @@ function updateGame() {
         strawberrySpeedY *= -1;
     }
 
+    // --- Movimento della patata ---
+    potatoY += POTATO_SPEED;
+    if (potatoY > SCREEN_HEIGHT) {
+        placePotato(); // Riposiziona la patata in alto quando esce dallo schermo
+    }
+
+
     // Collisioni con le banane
     let bananasToRemove = [];
     bananas.forEach((banana, index) => {
@@ -188,6 +234,12 @@ function updateGame() {
     // Collisioni con la fragolina
     let strawberryRect = { x: strawberryX, y: strawberryY, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE };
     if (checkCollision(playerRect, strawberryRect)) {
+        gameOver = true;
+    }
+
+    // Collisioni con la patata
+    let potatoRect = { x: potatoX, y: potatoY, width: POTATO_SIZE, height: POTATO_SIZE };
+    if (checkCollision(playerRect, potatoRect)) {
         gameOver = true;
     }
 }
@@ -236,6 +288,18 @@ function drawGame() {
         ctx.fill();
     }
 
+    // Disegna la patata
+    if (potatoImage.complete && potatoImage.naturalWidth > 0) {
+        ctx.drawImage(potatoImage, potatoX, potatoY, POTATO_SIZE, POTATO_SIZE);
+    } else {
+        // Disegna un cerchio marrone come fallback
+        ctx.fillStyle = BROWN;
+        ctx.beginPath();
+        ctx.arc(potatoX + POTATO_SIZE / 2, potatoY + POTATO_SIZE / 2, POTATO_SIZE / 2, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+
     // Disegna il punteggio
     ctx.fillStyle = FONT_COLOR;
     ctx.font = `${FONT_SIZE}px ${FONT_FAMILY}`;
@@ -261,12 +325,6 @@ function loop() {
     }
 }
 
-function checkCollision(rect1, rect2) {
-    return rect1.x < rect2.x + rect2.width &&
-           rect1.x + rect1.width > rect2.x &&
-           rect1.y < rect2.y + rect2.height &&
-           rect1.y + rect1.height > rect2.y;
-}
 
 // --- Event Listeners per il movimento e il riavvio ---
 window.addEventListener('keydown', (e) => {
@@ -288,12 +346,12 @@ window.addEventListener('keyup', (e) => {
 
 // Carica tutte le immagini e poi avvia il gioco
 let imagesLoaded = 0;
-const totalImages = 4; // player, banana, cucumber, strawberry
+const totalImages = 5; // player, banana, cucumber, strawberry, potato
 
 function imageLoaded() {
     imagesLoaded++;
     if (imagesLoaded === totalImages) {
-        resetGame(); // Inizializza il gioco (posiziona banane, cetrioli, fragolina)
+        resetGame(); // Inizializza il gioco (posiziona banane, cetrioli, fragolina, patata)
         loop();     // Avvia il game loop
     }
 }
@@ -323,5 +381,12 @@ strawberryImage.src = 'assets/fragolina.png';
 strawberryImage.onload = imageLoaded;
 strawberryImage.onerror = () => {
     console.error("Errore caricamento immagine fragolina.");
+    imageLoaded(); // Conta come caricata anche se con errore
+};
+
+potatoImage.src = 'assets/patata.png';
+potatoImage.onload = imageLoaded;
+potatoImage.onerror = () => {
+    console.error("Errore caricamento immagine patata.");
     imageLoaded(); // Conta come caricata anche se con errore
 };
