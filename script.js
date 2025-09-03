@@ -179,7 +179,12 @@ function placePotato() {
     }
 }
 
-function loadNextBackground() {
+function loadRandomBackground() {
+    currentBackgroundIndex = Math.floor(Math.random() * BACKGROUND_IMAGE_URLS.length);
+    backgroundImage.src = BACKGROUND_IMAGE_URLS[currentBackgroundIndex];
+}
+
+function loadNextBackground() { // Usata per il cambio background dopo la raccolta
     currentBackgroundIndex = (currentBackgroundIndex + 1) % BACKGROUND_IMAGE_URLS.length;
     backgroundImage.src = BACKGROUND_IMAGE_URLS[currentBackgroundIndex];
 }
@@ -196,8 +201,8 @@ function resetGame() {
     placeBananas();
     placeCucumbers();
     
-    currentBackgroundIndex = -1;
-    loadNextBackground();
+    // Carica uno sfondo casuale all'inizio di ogni gioco
+    loadRandomBackground();
 }
 
 function updateGame() {
@@ -263,7 +268,7 @@ function updateGame() {
     if (bananas.length === 0 && cucumbers.length === 0) {
         placeBananas();
         placeCucumbers();
-        loadNextBackground();
+        loadNextBackground(); // Cambia lo sfondo qui, prendendo il prossimo in sequenza
     }
 
     let strawberryRect = { x: strawberryX, y: strawberryY, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE };
@@ -287,10 +292,8 @@ function drawGame() {
         ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
     }
 
-    // --- NUOVO CODICE: Velo semi-trasparente per sfumare lo sfondo ---
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'; // Velo nero con 30% di opacità
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
     ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-    // --- FINE NUOVO CODICE ---
 
     ctx.drawImage(playerImage, playerX, playerY, PLAYER_SIZE, PLAYER_SIZE);
 
@@ -380,7 +383,7 @@ const totalImages = 6;
 function imageLoaded() {
     imagesLoaded++;
     if (imagesLoaded === totalImages) {
-        resetGame();
+        resetGame(); // resetGame ora gestisce anche il caricamento del primo sfondo casuale
         loop();
     }
 }
@@ -420,7 +423,8 @@ potatoImage.onerror = () => {
     imageLoaded();
 };
 
-backgroundImage.src = BACKGROUND_IMAGE_URLS[0];
+// Carica il primo sfondo casuale inizialmente
+loadRandomBackground(); // Questa funzione carica il primo sfondo in modo casuale
 backgroundImage.onload = imageLoaded;
 backgroundImage.onerror = () => {
     console.error("Errore caricamento immagine sfondo iniziale.");
