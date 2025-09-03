@@ -65,7 +65,12 @@ const BACKGROUND_IMAGE_URLS = [
     'bg/donkey_kong.png',
     'bg/metal_slug.png',
     'bg/street_fighter.png',
-    'bg/mortal_kombat.png'
+    'bg/mortal_kombat.png',
+    'bg/doom.png',
+    'bg/bubble_bobble.png',
+    'bg/arkanoid.png',
+    'bg/shinobi.png',
+    'bg/ghosts_goblins.png'
 ];
 let currentBackgroundIndex = 0;
 let backgroundImage = new Image();
