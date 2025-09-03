@@ -5,10 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Raccogli le Banane Web</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Stili aggiuntivi per il pulsante musica, se necessario */
+        #musicToggleButton {
+            margin-top: 10px;
+            padding: 8px 15px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
     <h1>Raccogli le Banane!</h1>
     <canvas id="gameCanvas" width="800" height="600"></canvas>
+    
+    <!-- Elemento audio per la musica di sottofondo (ora da cartella locale) -->
+    <audio id="backgroundMusic" loop>
+        <source src="sound/background_music.mp3" type="audio/mpeg">
+        Il tuo browser non supporta l'elemento audio.
+    </audio>
+
+    <!-- Pulsante per attivare/disattivare la musica -->
+    <button id="musicToggleButton">Musica: ON</button>
+
     <script src="script.js"></script>
 </body>
 </html>

@@ -6,9 +6,9 @@ const SCREEN_HEIGHT = canvas.height;
 
 // Giocatore
 let playerImage = new Image();
-let playerLoseImage = new Image(); // Nuova immagine per il Game Over
-const PLAYER_NORMAL_IMAGE_SRC = 'assets/faccia.png'; // Percorso immagine normale
-const PLAYER_LOSE_IMAGE_SRC = 'assets/faccia_lose.png'; // Percorso immagine Game Over
+let playerLoseImage = new Image();
+const PLAYER_NORMAL_IMAGE_SRC = 'assets/faccia.png';
+const PLAYER_LOSE_IMAGE_SRC = 'assets/faccia_lose.png';
 
 const PLAYER_SIZE = 50;
 let playerX = (SCREEN_WIDTH - PLAYER_SIZE) / 2;
@@ -20,29 +20,29 @@ let bananaImage = new Image();
 const BANANA_SIZE = 40;
 let bananas = [];
 const NUM_BANANAS = 10;
-const YELLOW = 'rgb(255, 255, 0)'; // Colore per la banana di fallback
+const YELLOW = 'rgb(255, 255, 0)';
 
 // Cetrioli
 let cucumberImage = new Image();
 const CUCUMBER_SIZE = 40;
 let cucumbers = [];
 const NUM_CUCUMBERS = 5;
-const GREEN = 'rgb(0, 128, 0)'; // Colore per il cetriolo di fallback
+const GREEN = 'rgb(0, 128, 0)';
 
 // Fragolina
 let strawberryImage = new Image();
 const STRAWBERRY_SIZE = 30;
 let strawberryX, strawberryY;
 let strawberrySpeedX, strawberrySpeedY;
-const STRAWBERRY_BASE_SPEED = 3; // Velocità base della fragolina
-const RED = 'rgb(255, 0, 0)'; // Colore per la fragolina di fallback
+const STRAWBERRY_BASE_SPEED = 3;
+const RED = 'rgb(255, 0, 0)';
 
 // Patata
 let potatoImage = new Image();
 const POTATO_SIZE = 45;
 let potatoX, potatoY;
-const POTATO_SPEED = 2; // Velocità di caduta della patata
-const BROWN = 'rgb(139, 69, 19)'; // Colore per la patata di fallback
+const POTATO_SPEED = 2;
+const BROWN = 'rgb(139, 69, 19)';
 
 // Punteggio e conteggi
 let bananasCollected = 0;
@@ -78,6 +78,29 @@ const BACKGROUND_IMAGE_URLS = [
 ];
 let currentBackgroundIndex = 0;
 let backgroundImage = new Image();
+
+// --- Musica di sottofondo ---
+const backgroundMusic = document.getElementById('backgroundMusic');
+const musicToggleButton = document.getElementById('musicToggleButton');
+let isMusicPlaying = false; // Stato iniziale della musica
+
+function toggleMusic() {
+    if (isMusicPlaying) {
+        backgroundMusic.pause();
+        musicToggleButton.textContent = 'Musica: OFF';
+    } else {
+        // I browser moderni potrebbero richiedere un'interazione utente per l'autoplay
+        backgroundMusic.play().catch(e => {
+            console.warn("La riproduzione automatica della musica è stata bloccata dal browser:", e);
+            // Non fare nulla, l'utente dovrà cliccare manualmente
+        });
+        musicToggleButton.textContent = 'Musica: ON';
+    }
+    isMusicPlaying = !isMusicPlaying;
+}
+
+// Collega il pulsante all'azione di toggle
+musicToggleButton.addEventListener('click', toggleMusic);
 
 
 // --- Funzioni di utilità per le collisioni ---
@@ -205,7 +228,6 @@ function resetGame() {
     playerX = (SCREEN_WIDTH - PLAYER_SIZE) / 2;
     playerY = (SCREEN_HEIGHT - PLAYER_SIZE) / 2;
     
-    // Ripristina l'immagine normale del giocatore
     playerImage.src = PLAYER_NORMAL_IMAGE_SRC; 
     
     placePotato();
@@ -285,13 +307,13 @@ function updateGame() {
     let strawberryRect = { x: strawberryX, y: strawberryY, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE };
     if (checkCollision(playerRect, strawberryRect)) {
         gameOver = true;
-        playerImage.src = PLAYER_LOSE_IMAGE_SRC; // Cambia immagine giocatore a Game Over
+        playerImage.src = PLAYER_LOSE_IMAGE_SRC;
     }
 
     let potatoRect = { x: potatoX, y: potatoY, width: POTATO_SIZE, height: POTATO_SIZE };
     if (checkCollision(playerRect, potatoRect)) {
         gameOver = true;
-        playerImage.src = PLAYER_LOSE_IMAGE_SRC; // Cambia immagine giocatore a Game Over
+        playerImage.src = PLAYER_LOSE_IMAGE_SRC;
     }
 }
 
@@ -391,13 +413,12 @@ window.addEventListener('keyup', (e) => {
 
 // --- Inizializzazione ---
 let imagesLoaded = 0;
-// totalImages include player, playerLose, banana, cucumber, strawberry, potato, and the FIRST background
 const totalImages = 7; 
 
 function imageLoaded() {
     imagesLoaded++;
     if (imagesLoaded === totalImages) {
-        resetGame(); // resetGame ora gestisce anche il caricamento del primo sfondo casuale
+        resetGame();
         loop();
     }
 }
@@ -409,7 +430,7 @@ playerImage.onerror = () => {
     imageLoaded();
 };
 
-playerLoseImage.src = PLAYER_LOSE_IMAGE_SRC; // Carica l'immagine di Game Over
+playerLoseImage.src = PLAYER_LOSE_IMAGE_SRC;
 playerLoseImage.onload = imageLoaded;
 playerLoseImage.onerror = () => {
     console.error("Errore caricamento immagine giocatore 'lose'.");
@@ -444,7 +465,7 @@ potatoImage.onerror = () => {
     imageLoaded();
 };
 
-loadRandomBackground(); // Questa funzione carica il primo sfondo in modo casuale
+loadRandomBackground();
 backgroundImage.onload = imageLoaded;
 backgroundImage.onerror = () => {
     console.error("Errore caricamento immagine sfondo iniziale.");
