@@ -196,8 +196,7 @@ function resetGame() {
     placeBananas();
     placeCucumbers();
     
-    // Inizializza o cambia lo sfondo
-    currentBackgroundIndex = -1; // Per assicurare che loadNextBackground carichi il primo (index 0)
+    currentBackgroundIndex = -1;
     loadNextBackground();
 }
 
@@ -261,11 +260,10 @@ function updateGame() {
         cucumbers.splice(cucumbersToRemove[i], 1);
     }
 
-    // Rigenerazione combinata di banane e cetrioli
     if (bananas.length === 0 && cucumbers.length === 0) {
         placeBananas();
         placeCucumbers();
-        loadNextBackground(); // Cambia lo sfondo qui
+        loadNextBackground();
     }
 
     let strawberryRect = { x: strawberryX, y: strawberryY, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE };
@@ -282,13 +280,17 @@ function updateGame() {
 function drawGame() {
     ctx.clearRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    // Disegna lo sfondo per primo
     if (backgroundImage.complete && backgroundImage.naturalWidth > 0) {
         ctx.drawImage(backgroundImage, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
     } else {
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
     }
+
+    // --- NUOVO CODICE: Velo semi-trasparente per sfumare lo sfondo ---
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'; // Velo nero con 30% di opacità
+    ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    // --- FINE NUOVO CODICE ---
 
     ctx.drawImage(playerImage, playerX, playerY, PLAYER_SIZE, PLAYER_SIZE);
 
