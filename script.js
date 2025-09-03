@@ -6,6 +6,10 @@ const SCREEN_HEIGHT = canvas.height;
 
 // Giocatore
 let playerImage = new Image();
+let playerLoseImage = new Image(); // Nuova immagine per il Game Over
+const PLAYER_NORMAL_IMAGE_SRC = 'assets/faccia.png'; // Percorso immagine normale
+const PLAYER_LOSE_IMAGE_SRC = 'assets/faccia_lose.png'; // Percorso immagine Game Over
+
 const PLAYER_SIZE = 50;
 let playerX = (SCREEN_WIDTH - PLAYER_SIZE) / 2;
 let playerY = (SCREEN_HEIGHT - PLAYER_SIZE) / 2;
@@ -189,7 +193,7 @@ function loadRandomBackground() {
     backgroundImage.src = BACKGROUND_IMAGE_URLS[currentBackgroundIndex];
 }
 
-function loadNextBackground() { // Usata per il cambio background dopo la raccolta
+function loadNextBackground() {
     currentBackgroundIndex = (currentBackgroundIndex + 1) % BACKGROUND_IMAGE_URLS.length;
     backgroundImage.src = BACKGROUND_IMAGE_URLS[currentBackgroundIndex];
 }
@@ -201,12 +205,14 @@ function resetGame() {
     playerX = (SCREEN_WIDTH - PLAYER_SIZE) / 2;
     playerY = (SCREEN_HEIGHT - PLAYER_SIZE) / 2;
     
+    // Ripristina l'immagine normale del giocatore
+    playerImage.src = PLAYER_NORMAL_IMAGE_SRC; 
+    
     placePotato();
     placeStrawberry();
     placeBananas();
     placeCucumbers();
     
-    // Carica uno sfondo casuale all'inizio di ogni gioco
     loadRandomBackground();
 }
 
@@ -273,17 +279,19 @@ function updateGame() {
     if (bananas.length === 0 && cucumbers.length === 0) {
         placeBananas();
         placeCucumbers();
-        loadNextBackground(); // Cambia lo sfondo qui, prendendo il prossimo in sequenza
+        loadNextBackground();
     }
 
     let strawberryRect = { x: strawberryX, y: strawberryY, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE };
     if (checkCollision(playerRect, strawberryRect)) {
         gameOver = true;
+        playerImage.src = PLAYER_LOSE_IMAGE_SRC; // Cambia immagine giocatore a Game Over
     }
 
     let potatoRect = { x: potatoX, y: potatoY, width: POTATO_SIZE, height: POTATO_SIZE };
     if (checkCollision(playerRect, potatoRect)) {
         gameOver = true;
+        playerImage.src = PLAYER_LOSE_IMAGE_SRC; // Cambia immagine giocatore a Game Over
     }
 }
 
@@ -383,7 +391,8 @@ window.addEventListener('keyup', (e) => {
 
 // --- Inizializzazione ---
 let imagesLoaded = 0;
-const totalImages = 6; 
+// totalImages include player, playerLose, banana, cucumber, strawberry, potato, and the FIRST background
+const totalImages = 7; 
 
 function imageLoaded() {
     imagesLoaded++;
@@ -393,10 +402,17 @@ function imageLoaded() {
     }
 }
 
-playerImage.src = 'assets/faccia.png';
+playerImage.src = PLAYER_NORMAL_IMAGE_SRC;
 playerImage.onload = imageLoaded;
 playerImage.onerror = () => {
-    console.error("Errore caricamento immagine giocatore.");
+    console.error("Errore caricamento immagine giocatore normale.");
+    imageLoaded();
+};
+
+playerLoseImage.src = PLAYER_LOSE_IMAGE_SRC; // Carica l'immagine di Game Over
+playerLoseImage.onload = imageLoaded;
+playerLoseImage.onerror = () => {
+    console.error("Errore caricamento immagine giocatore 'lose'.");
     imageLoaded();
 };
 
@@ -428,7 +444,6 @@ potatoImage.onerror = () => {
     imageLoaded();
 };
 
-// Carica il primo sfondo casuale inizialmente
 loadRandomBackground(); // Questa funzione carica il primo sfondo in modo casuale
 backgroundImage.onload = imageLoaded;
 backgroundImage.onerror = () => {
