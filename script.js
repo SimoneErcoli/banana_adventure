@@ -79,27 +79,25 @@ const BACKGROUND_IMAGE_URLS = [
 let currentBackgroundIndex = 0;
 let backgroundImage = new Image();
 
-// --- Musica di sottofondo ---
+// --- Musica e Suoni ---
 const backgroundMusic = document.getElementById('backgroundMusic');
 const musicToggleButton = document.getElementById('musicToggleButton');
-let isMusicPlaying = false; // Stato iniziale della musica
+const loseSound = document.getElementById('loseSound'); // Riferimento al suono di perdita
+let isMusicPlaying = false;
 
 function toggleMusic() {
     if (isMusicPlaying) {
         backgroundMusic.pause();
         musicToggleButton.textContent = 'Musica: OFF';
     } else {
-        // I browser moderni potrebbero richiedere un'interazione utente per l'autoplay
         backgroundMusic.play().catch(e => {
             console.warn("La riproduzione automatica della musica è stata bloccata dal browser:", e);
-            // Non fare nulla, l'utente dovrà cliccare manualmente
         });
         musicToggleButton.textContent = 'Musica: ON';
     }
     isMusicPlaying = !isMusicPlaying;
 }
 
-// Collega il pulsante all'azione di toggle
 musicToggleButton.addEventListener('click', toggleMusic);
 
 
@@ -308,12 +306,16 @@ function updateGame() {
     if (checkCollision(playerRect, strawberryRect)) {
         gameOver = true;
         playerImage.src = PLAYER_LOSE_IMAGE_SRC;
+        backgroundMusic.pause(); // Mette in pausa la musica di sottofondo
+        loseSound.play(); // Riproduce il suono di perdita
     }
 
     let potatoRect = { x: potatoX, y: potatoY, width: POTATO_SIZE, height: POTATO_SIZE };
     if (checkCollision(playerRect, potatoRect)) {
         gameOver = true;
         playerImage.src = PLAYER_LOSE_IMAGE_SRC;
+        backgroundMusic.pause(); // Mette in pausa la musica di sottofondo
+        loseSound.play(); // Riproduce il suono di perdita
     }
 }
 
@@ -400,6 +402,10 @@ window.addEventListener('keydown', (e) => {
     if (gameOver && e.key === 'r') {
         resetGame();
         loop();
+        // Se la musica era attiva prima del Game Over, riavviala
+        if (isMusicPlaying) {
+            backgroundMusic.play().catch(e => console.warn("Errore nel riavvio della musica:", e));
+        }
     } else if (!gameOver && keys.hasOwnProperty(e.key)) {
         keys[e.key] = true;
     }
