@@ -19,7 +19,7 @@ const playerSpeed = 5;
 let bananaImage = new Image();
 const BANANA_SIZE = 40;
 let bananas = [];
-const NUM_BANANAS = 10;
+const NUM_BANANAS = 5;
 const YELLOW = 'rgb(255, 255, 0)';
 
 // Cetrioli
@@ -53,11 +53,21 @@ const NERO_SIZE = 60;
 let nero = null;
 const NERO_SPAWN_CHANCE = 0.3;
 
+// Oggetto Vibro (Immunità)
+let vibroImage = new Image(); // Nuova immagine per Vibro
+const VIBRO_SIZE = 55; // Dimensione dell'oggetto Vibro
+let vibro = null; // Variabile per l'oggetto Vibro (null se non attivo)
+const VIBRO_SPAWN_CHANCE = 0.2; // 20% di probabilità di spawn
+const VIBRO_IMMUNITY_DURATION = 30; // Durata immunità in secondi
+let isImmune = false;
+let immunityStartTime = 0; // Timestamp di inizio immunità
+const BLUE = 'rgb(0, 0, 255)'; // Colore di fallback per Vibro
+
 // Punteggio e conteggi
 let bananasCollected = 0;
 let cucumbersCollected = 0;
-let lastBananaThreshold = 0; // Per tenere traccia dell'ultima soglia raggiunta per le banane
-let lastCucumberThreshold = 0; // Per tenere traccia dell'ultima soglia raggiunta per i cetrioli
+let lastBananaThreshold = 0;
+let lastCucumberThreshold = 0;
 
 const FONT_SIZE = 24;
 const FONT_COLOR = 'red';
@@ -166,9 +176,8 @@ function createHazardObject(type) {
                             .concat(strawberries.map(s => ({x: s.x, y: s.y, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE})))
                             .concat(potatoes.map(p => ({x: p.x, y: p.y, width: POTATO_SIZE, height: POTATO_SIZE})));
 
-    if (nero) {
-        excludeRects.push(nero);
-    }
+    if (nero) excludeRects.push(nero);
+    if (vibro) excludeRects.push(vibro); // Escludi vibro
 
     if (type === 'strawberry') {
         let newStrawberryRect = findNonOverlappingPosition(STRAWBERRY_SIZE, excludeRects);
@@ -197,6 +206,7 @@ function placeBananas() {
                                 .concat(strawberries.map(s => ({x: s.x, y: s.y, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE})))
                                 .concat(potatoes.map(p => ({x: p.x, y: p.y, width: POTATO_SIZE, height: POTATO_SIZE})));
         if (nero) excludeRects.push(nero);
+        if (vibro) excludeRects.push(vibro); // Escludi vibro
         let newBananaRect = findNonOverlappingPosition(BANANA_SIZE, excludeRects);
         if (newBananaRect) {
             bananas.push(newBananaRect);
@@ -212,6 +222,7 @@ function placeCucumbers() {
                                 .concat(strawberries.map(s => ({x: s.x, y: s.y, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE})))
                                 .concat(potatoes.map(p => ({x: p.x, y: p.y, width: POTATO_SIZE, height: POTATO_SIZE})));
         if (nero) excludeRects.push(nero);
+        if (vibro) excludeRects.push(vibro); // Escludi vibro
         let newCucumberRect = findNonOverlappingPosition(CUCUMBER_SIZE, excludeRects);
         if (newCucumberRect) {
             cucumbers.push(newCucumberRect);
@@ -225,12 +236,26 @@ function placeNero() {
                             .concat(cucumbers)
                             .concat(strawberries.map(s => ({x: s.x, y: s.y, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE})))
                             .concat(potatoes.map(p => ({x: p.x, y: p.y, width: POTATO_SIZE, height: POTATO_SIZE})));
-
+    if (vibro) excludeRects.push(vibro); // Escludi vibro
     let newNeroRect = findNonOverlappingPosition(NERO_SIZE, excludeRects);
     if (newNeroRect) {
         nero = newNeroRect;
     }
 }
+
+function placeVibro() {
+    let excludeRects = [{ x: playerX, y: playerY, width: PLAYER_SIZE, height: PLAYER_SIZE }]
+                            .concat(bananas)
+                            .concat(cucumbers)
+                            .concat(strawberries.map(s => ({x: s.x, y: s.y, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE})))
+                            .concat(potatoes.map(p => ({x: p.x, y: p.y, width: POTATO_SIZE, height: POTATO_SIZE})));
+    if (nero) excludeRects.push(nero); // Escludi nero
+    let newVibroRect = findNonOverlappingPosition(VIBRO_SIZE, excludeRects);
+    if (newVibroRect) {
+        vibro = newVibroRect;
+    }
+}
+
 
 function spawnInitialHazards() {
     strawberries = [];
@@ -262,6 +287,9 @@ function resetGame() {
     lastBananaThreshold = 0;
     lastCucumberThreshold = 0;
     nero = null;
+    vibro = null; // Resetta l'oggetto vibro
+    isImmune = false; // Resetta l'immunità
+    immunityStartTime = 0; // Resetta il timer immunità
 
     playerX = (SCREEN_WIDTH - PLAYER_SIZE) / 2;
     playerY = (SCREEN_HEIGHT - PLAYER_SIZE) / 2;
@@ -280,6 +308,16 @@ function resetGame() {
 
 function updateGame() {
     if (gameOver) return;
+
+    // Aggiorna timer immunità
+    if (isImmune) {
+        const currentTime = Date.now();
+        const elapsedTime = (currentTime - immunityStartTime) / 1000; // Secondi
+        if (elapsedTime >= VIBRO_IMMUNITY_DURATION) {
+            isImmune = false;
+            immunityStartTime = 0;
+        }
+    }
 
     if (keys.ArrowUp) {
         playerY -= playerSpeed;
@@ -333,7 +371,6 @@ function updateGame() {
             bananasToRemove.push(index);
             bananasCollected += 1;
 
-            // Aumenta il numero di patate ogni 20 banane
             if (bananasCollected > 0 && bananasCollected % 20 === 0 && bananasCollected !== lastBananaThreshold) {
                 currentNumPotatoes++;
                 const newPotato = createHazardObject('potato');
@@ -354,7 +391,6 @@ function updateGame() {
             cucumbersToRemove.push(index);
             cucumbersCollected += 1;
 
-            // Aumenta il numero di fragoline ogni 20 cetrioli
             if (cucumbersCollected > 0 && cucumbersCollected % 20 === 0 && cucumbersCollected !== lastCucumberThreshold) {
                 currentNumStrawberries++;
                 const newStrawberry = createHazardObject('strawberry');
@@ -377,6 +413,11 @@ function updateGame() {
         } else {
             nero = null;
         }
+        if (Math.random() < VIBRO_SPAWN_CHANCE) { // Spawn casuale di Vibro
+            placeVibro();
+        } else {
+            vibro = null;
+        }
     }
 
     // Collisione con l'oggetto nero
@@ -391,27 +432,40 @@ function updateGame() {
         }
     }
 
-    // Collisioni con le fragoline (CAUSA GAME OVER)
-    strawberries.forEach(strawberry => {
-        let strawberryRect = { x: strawberry.x, y: strawberry.y, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE };
-        if (checkCollision(playerRect, strawberryRect)) {
-            gameOver = true;
-            playerImage.src = PLAYER_LOSE_IMAGE_SRC;
-            backgroundMusic.pause();
-            loseSound.play();
+    // Collisione con l'oggetto Vibro
+    if (vibro) {
+        let vibroRect = { x: vibro.x, y: vibro.y, width: VIBRO_SIZE, height: VIBRO_SIZE };
+        if (checkCollision(playerRect, vibroRect)) {
+            isImmune = true;
+            immunityStartTime = Date.now();
+            vibro = null; // Rimuovi Vibro dopo la raccolta
+            // Qui puoi aggiungere un suono di power-up se vuoi
         }
-    });
+    }
 
-    // Collisioni con le patate (CAUSA GAME OVER)
-    potatoes.forEach(potato => {
-        let potatoRect = { x: potato.x, y: potato.y, width: POTATO_SIZE, height: POTATO_SIZE };
-        if (checkCollision(playerRect, potatoRect)) {
-            gameOver = true;
-            playerImage.src = PLAYER_LOSE_IMAGE_SRC;
-            backgroundMusic.pause();
-            loseSound.play();
-        }
-    });
+    // Collisioni con le fragoline (CAUSA GAME OVER se non immune)
+    if (!isImmune) { // Controlla l'immunità
+        strawberries.forEach(strawberry => {
+            let strawberryRect = { x: strawberry.x, y: strawberry.y, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE };
+            if (checkCollision(playerRect, strawberryRect)) {
+                gameOver = true;
+                playerImage.src = PLAYER_LOSE_IMAGE_SRC;
+                backgroundMusic.pause();
+                loseSound.play();
+            }
+        });
+
+        // Collisioni con le patate (CAUSA GAME OVER se non immune)
+        potatoes.forEach(potato => {
+            let potatoRect = { x: potato.x, y: potato.y, width: POTATO_SIZE, height: POTATO_SIZE };
+            if (checkCollision(playerRect, potatoRect)) {
+                gameOver = true;
+                playerImage.src = PLAYER_LOSE_IMAGE_SRC;
+                backgroundMusic.pause();
+                loseSound.play();
+            }
+        });
+    }
 }
 
 function drawGame() {
@@ -482,10 +536,28 @@ function drawGame() {
         }
     }
 
+    // Disegna l'oggetto Vibro
+    if (vibro) {
+        if (vibroImage.complete && vibroImage.naturalWidth > 0) {
+            ctx.drawImage(vibroImage, vibro.x, vibro.y, VIBRO_SIZE, VIBRO_SIZE);
+        } else {
+            ctx.fillStyle = BLUE; // Fallback color for Vibro
+            ctx.fillRect(vibro.x, vibro.y, VIBRO_SIZE, VIBRO_SIZE);
+        }
+    }
+
     ctx.fillStyle = FONT_COLOR;
     ctx.font = `${FONT_SIZE}px ${FONT_FAMILY}`;
     ctx.fillText(`Banane: ${bananasCollected}`, 10, 30);
     ctx.fillText(`Cetrioli: ${cucumbersCollected}`, 10, 60);
+
+    // Disegna il contatore dell'immunità
+    if (isImmune) {
+        const remainingTime = Math.ceil(VIBRO_IMMUNITY_DURATION - (Date.now() - immunityStartTime) / 1000);
+        ctx.fillStyle = 'blue';
+        ctx.font = `${FONT_SIZE}px ${FONT_FAMILY}`;
+        ctx.fillText(`Immunità: ${remainingTime}s`, SCREEN_WIDTH - 150, 30); // Posiziona in alto a destra
+    }
 
     if (gameOver) {
         ctx.fillStyle = 'red';
@@ -526,7 +598,7 @@ window.addEventListener('keyup', (e) => {
 
 // --- Inizializzazione ---
 let imagesLoaded = 0;
-const totalImages = 8; 
+const totalImages = 9; // player, playerLose, banana, cucumber, strawberry, potato, nero, vibro, FIRST background
 
 function imageLoaded() {
     imagesLoaded++;
@@ -582,6 +654,14 @@ neroImage.src = 'assets/nero.png';
 neroImage.onload = imageLoaded;
 neroImage.onerror = () => {
     console.error("Errore caricamento immagine 'nero'.");
+    imageLoaded();
+};
+
+// Carica l'immagine per l'oggetto Vibro
+vibroImage.src = 'assets/vibro.png';
+vibroImage.onload = imageLoaded;
+vibroImage.onerror = () => {
+    console.error("Errore caricamento immagine 'vibro'.");
     imageLoaded();
 };
 
