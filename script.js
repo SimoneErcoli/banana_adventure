@@ -19,7 +19,7 @@ const playerSpeed = 5;
 let bananaImage = new Image();
 const BANANA_SIZE = 40;
 let bananas = [];
-const NUM_BANANAS = 5;
+const NUM_BANANAS = 10;
 const YELLOW = 'rgb(255, 255, 0)';
 
 // Cetrioli
@@ -54,20 +54,20 @@ let nero = null;
 const NERO_SPAWN_CHANCE = 0.3;
 
 // Oggetto Vibro (Immunità)
-let vibroImage = new Image(); // Nuova immagine per Vibro
-const VIBRO_SIZE = 55; // Dimensione dell'oggetto Vibro
-let vibro = null; // Variabile per l'oggetto Vibro (null se non attivo)
-const VIBRO_SPAWN_CHANCE = 0.2; // 20% di probabilità di spawn
+let vibroImage = new Image();
+const VIBRO_SIZE = 55;
+let vibro = null;
+const VIBRO_SPAWN_CHANCE = 0.2;
 const VIBRO_IMMUNITY_DURATION = 30; // Durata immunità in secondi
 let isImmune = false;
-let immunityStartTime = 0; // Timestamp di inizio immunità
-const BLUE = 'rgb(0, 0, 255)'; // Colore di fallback per Vibro
+let immunityStartTime = 0;
+const BLUE = 'rgb(0, 0, 255)';
 
 // Punteggio e conteggi
 let bananasCollected = 0;
 let cucumbersCollected = 0;
-let lastBananaThreshold = 0;
-let lastCucumberThreshold = 0;
+let lastBananaThreshold = 0; // Per tenere traccia dell'ultima soglia di difficoltà per le banane
+let lastCucumberThreshold = 0; // Per tenere traccia dell'ultima soglia di difficoltà per i cetrioli
 
 const FONT_SIZE = 24;
 const FONT_COLOR = 'red';
@@ -143,7 +143,7 @@ function findNonOverlappingPosition(size, excludeRects = [], isFalling = false) 
         if (isFalling) {
             newRect = {
                 x: Math.random() * (SCREEN_WIDTH - size),
-                y: -size,
+                y: -size, // Inizia fuori dallo schermo in alto
                 width: size,
                 height: size
             };
@@ -177,7 +177,7 @@ function createHazardObject(type) {
                             .concat(potatoes.map(p => ({x: p.x, y: p.y, width: POTATO_SIZE, height: POTATO_SIZE})));
 
     if (nero) excludeRects.push(nero);
-    if (vibro) excludeRects.push(vibro); // Escludi vibro
+    if (vibro) excludeRects.push(vibro);
 
     if (type === 'strawberry') {
         let newStrawberryRect = findNonOverlappingPosition(STRAWBERRY_SIZE, excludeRects);
@@ -195,6 +195,29 @@ function createHazardObject(type) {
     return null;
 }
 
+/**
+ * Controlla se il numero di banane/cetrioli raccolti ha superato una soglia di 20
+ * e aggiunge una nuova patata/fragolina di conseguenza.
+ * Gestisce anche i salti di più soglie (ad esempio con l'oggetto nero).
+ */
+function checkAndIncreaseDifficulty() {
+    // Aumento patate per banane
+    while (bananasCollected >= lastBananaThreshold + 20) {
+        currentNumPotatoes++;
+        const newPotato = createHazardObject('potato');
+        if (newPotato) potatoes.push(newPotato);
+        lastBananaThreshold += 20;
+    }
+
+    // Aumento fragoline per cetrioli
+    while (cucumbersCollected >= lastCucumberThreshold + 20) {
+        currentNumStrawberries++;
+        const newStrawberry = createHazardObject('strawberry');
+        if (newStrawberry) strawberries.push(newStrawberry);
+        lastCucumberThreshold += 20;
+    }
+}
+
 
 // --- Funzioni di gioco ---
 
@@ -206,7 +229,7 @@ function placeBananas() {
                                 .concat(strawberries.map(s => ({x: s.x, y: s.y, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE})))
                                 .concat(potatoes.map(p => ({x: p.x, y: p.y, width: POTATO_SIZE, height: POTATO_SIZE})));
         if (nero) excludeRects.push(nero);
-        if (vibro) excludeRects.push(vibro); // Escludi vibro
+        if (vibro) excludeRects.push(vibro);
         let newBananaRect = findNonOverlappingPosition(BANANA_SIZE, excludeRects);
         if (newBananaRect) {
             bananas.push(newBananaRect);
@@ -222,7 +245,7 @@ function placeCucumbers() {
                                 .concat(strawberries.map(s => ({x: s.x, y: s.y, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE})))
                                 .concat(potatoes.map(p => ({x: p.x, y: p.y, width: POTATO_SIZE, height: POTATO_SIZE})));
         if (nero) excludeRects.push(nero);
-        if (vibro) excludeRects.push(vibro); // Escludi vibro
+        if (vibro) excludeRects.push(vibro);
         let newCucumberRect = findNonOverlappingPosition(CUCUMBER_SIZE, excludeRects);
         if (newCucumberRect) {
             cucumbers.push(newCucumberRect);
@@ -236,7 +259,7 @@ function placeNero() {
                             .concat(cucumbers)
                             .concat(strawberries.map(s => ({x: s.x, y: s.y, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE})))
                             .concat(potatoes.map(p => ({x: p.x, y: p.y, width: POTATO_SIZE, height: POTATO_SIZE})));
-    if (vibro) excludeRects.push(vibro); // Escludi vibro
+    if (vibro) excludeRects.push(vibro);
     let newNeroRect = findNonOverlappingPosition(NERO_SIZE, excludeRects);
     if (newNeroRect) {
         nero = newNeroRect;
@@ -249,7 +272,7 @@ function placeVibro() {
                             .concat(cucumbers)
                             .concat(strawberries.map(s => ({x: s.x, y: s.y, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE})))
                             .concat(potatoes.map(p => ({x: p.x, y: p.y, width: POTATO_SIZE, height: POTATO_SIZE})));
-    if (nero) excludeRects.push(nero); // Escludi nero
+    if (nero) excludeRects.push(nero);
     let newVibroRect = findNonOverlappingPosition(VIBRO_SIZE, excludeRects);
     if (newVibroRect) {
         vibro = newVibroRect;
@@ -287,9 +310,9 @@ function resetGame() {
     lastBananaThreshold = 0;
     lastCucumberThreshold = 0;
     nero = null;
-    vibro = null; // Resetta l'oggetto vibro
-    isImmune = false; // Resetta l'immunità
-    immunityStartTime = 0; // Resetta il timer immunità
+    vibro = null;
+    isImmune = false;
+    immunityStartTime = 0;
 
     playerX = (SCREEN_WIDTH - PLAYER_SIZE) / 2;
     playerY = (SCREEN_HEIGHT - PLAYER_SIZE) / 2;
@@ -309,10 +332,9 @@ function resetGame() {
 function updateGame() {
     if (gameOver) return;
 
-    // Aggiorna timer immunità
     if (isImmune) {
         const currentTime = Date.now();
-        const elapsedTime = (currentTime - immunityStartTime) / 1000; // Secondi
+        const elapsedTime = (currentTime - immunityStartTime) / 1000;
         if (elapsedTime >= VIBRO_IMMUNITY_DURATION) {
             isImmune = false;
             immunityStartTime = 0;
@@ -370,13 +392,7 @@ function updateGame() {
         if (checkCollision(playerRect, banana)) {
             bananasToRemove.push(index);
             bananasCollected += 1;
-
-            if (bananasCollected > 0 && bananasCollected % 20 === 0 && bananasCollected !== lastBananaThreshold) {
-                currentNumPotatoes++;
-                const newPotato = createHazardObject('potato');
-                if (newPotato) potatoes.push(newPotato);
-                lastBananaThreshold = bananasCollected;
-            }
+            checkAndIncreaseDifficulty(); // Controlla e aumenta difficoltà
         }
     });
 
@@ -390,13 +406,7 @@ function updateGame() {
         if (checkCollision(playerRect, cucumber)) {
             cucumbersToRemove.push(index);
             cucumbersCollected += 1;
-
-            if (cucumbersCollected > 0 && cucumbersCollected % 20 === 0 && cucumbersCollected !== lastCucumberThreshold) {
-                currentNumStrawberries++;
-                const newStrawberry = createHazardObject('strawberry');
-                if (newStrawberry) strawberries.push(newStrawberry);
-                lastCucumberThreshold = cucumbersCollected;
-            }
+            checkAndIncreaseDifficulty(); // Controlla e aumenta difficoltà
         }
     });
 
@@ -413,7 +423,7 @@ function updateGame() {
         } else {
             nero = null;
         }
-        if (Math.random() < VIBRO_SPAWN_CHANCE) { // Spawn casuale di Vibro
+        if (Math.random() < VIBRO_SPAWN_CHANCE) {
             placeVibro();
         } else {
             vibro = null;
@@ -425,10 +435,12 @@ function updateGame() {
         let neroRect = { x: nero.x, y: nero.y, width: NERO_SIZE, height: NERO_SIZE };
         if (checkCollision(playerRect, neroRect)) {
             bananasCollected += bananas.length;
-            bananas = [];
+            bananas = []; // Svuota le banane
             cucumbersCollected += cucumbers.length;
-            cucumbers = [];
+            cucumbers = []; // Svuota i cetrioli
             nero = null;
+
+            checkAndIncreaseDifficulty(); // Controlla e aumenta difficoltà dopo aver preso nero
         }
     }
 
@@ -438,13 +450,12 @@ function updateGame() {
         if (checkCollision(playerRect, vibroRect)) {
             isImmune = true;
             immunityStartTime = Date.now();
-            vibro = null; // Rimuovi Vibro dopo la raccolta
-            // Qui puoi aggiungere un suono di power-up se vuoi
+            vibro = null;
         }
     }
 
     // Collisioni con le fragoline (CAUSA GAME OVER se non immune)
-    if (!isImmune) { // Controlla l'immunità
+    if (!isImmune) {
         strawberries.forEach(strawberry => {
             let strawberryRect = { x: strawberry.x, y: strawberry.y, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE };
             if (checkCollision(playerRect, strawberryRect)) {
@@ -536,12 +547,11 @@ function drawGame() {
         }
     }
 
-    // Disegna l'oggetto Vibro
     if (vibro) {
         if (vibroImage.complete && vibroImage.naturalWidth > 0) {
             ctx.drawImage(vibroImage, vibro.x, vibro.y, VIBRO_SIZE, VIBRO_SIZE);
         } else {
-            ctx.fillStyle = BLUE; // Fallback color for Vibro
+            ctx.fillStyle = BLUE;
             ctx.fillRect(vibro.x, vibro.y, VIBRO_SIZE, VIBRO_SIZE);
         }
     }
@@ -551,12 +561,11 @@ function drawGame() {
     ctx.fillText(`Banane: ${bananasCollected}`, 10, 30);
     ctx.fillText(`Cetrioli: ${cucumbersCollected}`, 10, 60);
 
-    // Disegna il contatore dell'immunità
     if (isImmune) {
         const remainingTime = Math.ceil(VIBRO_IMMUNITY_DURATION - (Date.now() - immunityStartTime) / 1000);
         ctx.fillStyle = 'blue';
         ctx.font = `${FONT_SIZE}px ${FONT_FAMILY}`;
-        ctx.fillText(`Immunità: ${remainingTime}s`, SCREEN_WIDTH - 150, 30); // Posiziona in alto a destra
+        ctx.fillText(`Immunità: ${remainingTime}s`, SCREEN_WIDTH - 150, 30);
     }
 
     if (gameOver) {
@@ -657,7 +666,6 @@ neroImage.onerror = () => {
     imageLoaded();
 };
 
-// Carica l'immagine per l'oggetto Vibro
 vibroImage.src = 'assets/vibro.png';
 vibroImage.onload = imageLoaded;
 vibroImage.onerror = () => {
