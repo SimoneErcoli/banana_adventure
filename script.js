@@ -19,7 +19,7 @@ const playerSpeed = 5;
 let bananaImage = new Image();
 const BANANA_SIZE = 40;
 let bananas = [];
-const NUM_BANANAS = 10;
+const NUM_BANANAS = 5;
 const YELLOW = 'rgb(255, 255, 0)';
 
 // Cetrioli
