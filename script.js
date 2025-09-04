@@ -32,21 +32,27 @@ const GREEN = 'rgb(0, 128, 0)';
 // Fragolina
 let strawberryImage = new Image();
 const STRAWBERRY_SIZE = 30;
-let strawberryX, strawberryY;
-let strawberrySpeedX, strawberrySpeedY;
+let strawberries = []; // Ora è un array
+const INITIAL_NUM_STRAWBERRIES = 1; // Inizia con 1 fragolina
+let currentNumStrawberries = INITIAL_NUM_STRAWBERRIES;
 const STRAWBERRY_BASE_SPEED = 3;
 const RED = 'rgb(255, 0, 0)';
 
 // Patata
 let potatoImage = new Image();
 const POTATO_SIZE = 45;
-let potatoX, potatoY;
+let potatoes = []; // Ora è un array
+const INITIAL_NUM_POTATOES = 1; // Inizia con 1 patata
+let currentNumPotatoes = INITIAL_NUM_POTATOES;
 const POTATO_SPEED = 2;
 const BROWN = 'rgb(139, 69, 19)';
 
 // Punteggio e conteggi
 let bananasCollected = 0;
 let cucumbersCollected = 0;
+let lastBananaThreshold = 0; // Per tenere traccia dell'ultima soglia raggiunta per le banane
+let lastCucumberThreshold = 0; // Per tenere traccia dell'ultima soglia raggiunta per i cetrioli
+
 const FONT_SIZE = 24;
 const FONT_COLOR = 'red';
 const FONT_FAMILY = 'Arial';
@@ -82,7 +88,7 @@ let backgroundImage = new Image();
 // --- Musica e Suoni ---
 const backgroundMusic = document.getElementById('backgroundMusic');
 const musicToggleButton = document.getElementById('musicToggleButton');
-const loseSound = document.getElementById('loseSound'); // Riferimento al suono di perdita
+const loseSound = document.getElementById('loseSound');
 let isMusicPlaying = false;
 
 function toggleMusic() {
@@ -121,7 +127,7 @@ function findNonOverlappingPosition(size, excludeRects = [], isFalling = false) 
         if (isFalling) {
             newRect = {
                 x: Math.random() * (SCREEN_WIDTH - size),
-                y: -size,
+                y: -size, // Inizia fuori dallo schermo in alto
                 width: size,
                 height: size
             };
@@ -146,15 +152,41 @@ function findNonOverlappingPosition(size, excludeRects = [], isFalling = false) 
     return newRect;
 }
 
+// Funzione per creare un singolo oggetto fragolina o patata
+function createHazardObject(type) {
+    let excludeRects = [{ x: playerX, y: playerY, width: PLAYER_SIZE, height: PLAYER_SIZE }]
+                            .concat(bananas)
+                            .concat(cucumbers)
+                            .concat(strawberries.map(s => ({x: s.x, y: s.y, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE})))
+                            .concat(potatoes.map(p => ({x: p.x, y: p.y, width: POTATO_SIZE, height: POTATO_SIZE})));
+
+    if (type === 'strawberry') {
+        let newStrawberryRect = findNonOverlappingPosition(STRAWBERRY_SIZE, excludeRects);
+        if (newStrawberryRect) {
+            let speedX = (Math.random() < 0.5 ? 1 : -1) * STRAWBERRY_BASE_SPEED;
+            let speedY = (Math.random() < 0.5 ? 1 : -1) * STRAWBERRY_BASE_SPEED;
+            return { x: newStrawberryRect.x, y: newStrawberryRect.y, speedX: speedX, speedY: speedY };
+        }
+    } else if (type === 'potato') {
+        let newPotatoRect = findNonOverlappingPosition(POTATO_SIZE, excludeRects, true); // true per isFalling
+        if (newPotatoRect) {
+            return { x: newPotatoRect.x, y: newPotatoRect.y };
+        }
+    }
+    return null; // In caso di fallimento nella creazione
+}
+
+
 // --- Funzioni di gioco ---
 
 function placeBananas() {
     bananas = [];
     while (bananas.length < NUM_BANANAS) {
+        // Exclude all current objects for placement
         let excludeRects = [{ x: playerX, y: playerY, width: PLAYER_SIZE, height: PLAYER_SIZE }]
                                 .concat(cucumbers)
-                                .concat([{ x: strawberryX, y: strawberryY, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE }])
-                                .concat([{ x: potatoX, y: potatoY, width: POTATO_SIZE, height: POTATO_SIZE }]);
+                                .concat(strawberries.map(s => ({x: s.x, y: s.y, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE})))
+                                .concat(potatoes.map(p => ({x: p.x, y: p.y, width: POTATO_SIZE, height: POTATO_SIZE})));
         let newBananaRect = findNonOverlappingPosition(BANANA_SIZE, excludeRects);
         if (newBananaRect) {
             bananas.push(newBananaRect);
@@ -165,10 +197,11 @@ function placeBananas() {
 function placeCucumbers() {
     cucumbers = [];
     while (cucumbers.length < NUM_CUCUMBERS) {
+        // Exclude all current objects for placement
         let excludeRects = [{ x: playerX, y: playerY, width: PLAYER_SIZE, height: PLAYER_SIZE }]
                                 .concat(bananas)
-                                .concat([{ x: strawberryX, y: strawberryY, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE }])
-                                .concat([{ x: potatoX, y: potatoY, width: POTATO_SIZE, height: POTATO_SIZE }]);
+                                .concat(strawberries.map(s => ({x: s.x, y: s.y, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE})))
+                                .concat(potatoes.map(p => ({x: p.x, y: p.y, width: POTATO_SIZE, height: POTATO_SIZE})));
         let newCucumberRect = findNonOverlappingPosition(CUCUMBER_SIZE, excludeRects);
         if (newCucumberRect) {
             cucumbers.push(newCucumberRect);
@@ -176,36 +209,16 @@ function placeCucumbers() {
     }
 }
 
-function placeStrawberry() {
-    let excludeRects = [{ x: playerX, y: playerY, width: PLAYER_SIZE, height: PLAYER_SIZE }]
-                            .concat(bananas)
-                            .concat(cucumbers)
-                            .concat([{ x: potatoX, y: potatoY, width: POTATO_SIZE, height: POTATO_SIZE }]);
-    let newStrawberryRect = findNonOverlappingPosition(STRAWBERRY_SIZE, excludeRects);
-    if (newStrawberryRect) {
-        strawberryX = newStrawberryRect.x;
-        strawberryY = newStrawberryRect.y;
-    } else {
-        strawberryX = (SCREEN_WIDTH - STRAWBERRY_SIZE) / 2;
-        strawberryY = (SCREEN_HEIGHT - STRAWBERRY_SIZE) / 2;
+function spawnInitialHazards() {
+    strawberries = [];
+    potatoes = [];
+    for (let i = 0; i < currentNumStrawberries; i++) {
+        const newStrawberry = createHazardObject('strawberry');
+        if (newStrawberry) strawberries.push(newStrawberry);
     }
-
-    strawberrySpeedX = (Math.random() < 0.5 ? 1 : -1) * STRAWBERRY_BASE_SPEED;
-    strawberrySpeedY = (Math.random() < 0.5 ? 1 : -1) * STRAWBERRY_BASE_SPEED;
-}
-
-function placePotato() {
-    let excludeRects = [{ x: playerX, y: playerY, width: PLAYER_SIZE, height: PLAYER_SIZE }]
-                            .concat(bananas)
-                            .concat(cucumbers)
-                            .concat([{ x: strawberryX, y: strawberryY, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE }]);
-    let newPotatoRect = findNonOverlappingPosition(POTATO_SIZE, excludeRects, true);
-    if (newPotatoRect) {
-        potatoX = newPotatoRect.x;
-        potatoY = newPotatoRect.y;
-    } else {
-        potatoX = Math.random() * (SCREEN_WIDTH - POTATO_SIZE);
-        potatoY = -POTATO_SIZE;
+    for (let i = 0; i < currentNumPotatoes; i++) {
+        const newPotato = createHazardObject('potato');
+        if (newPotato) potatoes.push(newPotato);
     }
 }
 
@@ -223,15 +236,21 @@ function resetGame() {
     gameOver = false;
     bananasCollected = 0;
     cucumbersCollected = 0;
+    lastBananaThreshold = 0; // Reset threshold
+    lastCucumberThreshold = 0; // Reset threshold
+
     playerX = (SCREEN_WIDTH - PLAYER_SIZE) / 2;
     playerY = (SCREEN_HEIGHT - PLAYER_SIZE) / 2;
     
     playerImage.src = PLAYER_NORMAL_IMAGE_SRC; 
     
-    placePotato();
-    placeStrawberry();
+    // Reset numero di pericoli
+    currentNumPotatoes = INITIAL_NUM_POTATOES;
+    currentNumStrawberries = INITIAL_NUM_STRAWBERRIES;
+
     placeBananas();
     placeCucumbers();
+    spawnInitialHazards(); // Spawn iniziale di patate e fragoline
     
     loadRandomBackground();
 }
@@ -257,26 +276,50 @@ function updateGame() {
 
     let playerRect = { x: playerX, y: playerY, width: PLAYER_SIZE, height: PLAYER_SIZE };
 
-    strawberryX += strawberrySpeedX;
-    strawberryY += strawberrySpeedY;
+    // --- Movimento delle fragoline ---
+    strawberries.forEach(strawberry => {
+        strawberry.x += strawberry.speedX;
+        strawberry.y += strawberry.speedY;
 
-    if (strawberryX + STRAWBERRY_SIZE > SCREEN_WIDTH || strawberryX < 0) {
-        strawberrySpeedX *= -1;
-    }
-    if (strawberryY + STRAWBERRY_SIZE > SCREEN_HEIGHT || strawberryY < 0) {
-        strawberrySpeedY *= -1;
-    }
+        if (strawberry.x + STRAWBERRY_SIZE > SCREEN_WIDTH || strawberry.x < 0) {
+            strawberry.speedX *= -1;
+        }
+        if (strawberry.y + STRAWBERRY_SIZE > SCREEN_HEIGHT || strawberry.y < 0) {
+            strawberry.speedY *= -1;
+        }
+    });
 
-    potatoY += POTATO_SPEED;
-    if (potatoY > SCREEN_HEIGHT) {
-        placePotato();
-    }
+    // --- Movimento delle patate ---
+    potatoes.forEach(potato => {
+        potato.y += POTATO_SPEED;
+        if (potato.y > SCREEN_HEIGHT) {
+            // Riposiziona la patata in alto quando esce dallo schermo
+            const newPotatoPos = createHazardObject('potato');
+            if (newPotatoPos) {
+                potato.x = newPotatoPos.x;
+                potato.y = newPotatoPos.y;
+            } else { // Fallback se non trova posizione non sovrapposta
+                potato.x = Math.random() * (SCREEN_WIDTH - POTATO_SIZE);
+                potato.y = -POTATO_SIZE;
+            }
+        }
+    });
 
+
+    // Collisioni con le banane
     let bananasToRemove = [];
     bananas.forEach((banana, index) => {
         if (checkCollision(playerRect, banana)) {
             bananasToRemove.push(index);
-            bananasCollected += 1;
+            bananasCollected += 1; // Incrementa il contatore delle banane
+
+            // Aumenta il numero di patate ogni 10 banane
+            if (bananasCollected > 0 && bananasCollected % 10 === 0 && bananasCollected !== lastBananaThreshold) {
+                currentNumPotatoes++;
+                const newPotato = createHazardObject('potato');
+                if (newPotato) potatoes.push(newPotato);
+                lastBananaThreshold = bananasCollected; // Aggiorna la soglia
+            }
         }
     });
 
@@ -284,11 +327,20 @@ function updateGame() {
         bananas.splice(bananasToRemove[i], 1);
     }
 
+    // Collisioni con i cetrioli
     let cucumbersToRemove = [];
     cucumbers.forEach((cucumber, index) => {
         if (checkCollision(playerRect, cucumber)) {
             cucumbersToRemove.push(index);
-            cucumbersCollected += 1;
+            cucumbersCollected += 1; // Incrementa il contatore dei cetrioli
+
+            // Aumenta il numero di fragoline ogni 10 cetrioli
+            if (cucumbersCollected > 0 && cucumbersCollected % 10 === 0 && cucumbersCollected !== lastCucumberThreshold) {
+                currentNumStrawberries++;
+                const newStrawberry = createHazardObject('strawberry');
+                if (newStrawberry) strawberries.push(newStrawberry);
+                lastCucumberThreshold = cucumbersCollected; // Aggiorna la soglia
+            }
         }
     });
 
@@ -302,21 +354,27 @@ function updateGame() {
         loadNextBackground();
     }
 
-    let strawberryRect = { x: strawberryX, y: strawberryY, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE };
-    if (checkCollision(playerRect, strawberryRect)) {
-        gameOver = true;
-        playerImage.src = PLAYER_LOSE_IMAGE_SRC;
-        backgroundMusic.pause(); // Mette in pausa la musica di sottofondo
-        loseSound.play(); // Riproduce il suono di perdita
-    }
+    // Collisioni con le fragoline (CAUSA GAME OVER)
+    strawberries.forEach(strawberry => {
+        let strawberryRect = { x: strawberry.x, y: strawberry.y, width: STRAWBERRY_SIZE, height: STRAWBERRY_SIZE };
+        if (checkCollision(playerRect, strawberryRect)) {
+            gameOver = true;
+            playerImage.src = PLAYER_LOSE_IMAGE_SRC;
+            backgroundMusic.pause();
+            loseSound.play();
+        }
+    });
 
-    let potatoRect = { x: potatoX, y: potatoY, width: POTATO_SIZE, height: POTATO_SIZE };
-    if (checkCollision(playerRect, potatoRect)) {
-        gameOver = true;
-        playerImage.src = PLAYER_LOSE_IMAGE_SRC;
-        backgroundMusic.pause(); // Mette in pausa la musica di sottofondo
-        loseSound.play(); // Riproduce il suono di perdita
-    }
+    // Collisioni con le patate (CAUSA GAME OVER)
+    potatoes.forEach(potato => {
+        let potatoRect = { x: potato.x, y: potato.y, width: POTATO_SIZE, height: POTATO_SIZE };
+        if (checkCollision(playerRect, potatoRect)) {
+            gameOver = true;
+            playerImage.src = PLAYER_LOSE_IMAGE_SRC;
+            backgroundMusic.pause();
+            loseSound.play();
+        }
+    });
 }
 
 function drawGame() {
@@ -356,23 +414,29 @@ function drawGame() {
         }
     });
 
-    if (strawberryImage.complete && strawberryImage.naturalWidth > 0) {
-        ctx.drawImage(strawberryImage, strawberryX, strawberryY, STRAWBERRY_SIZE, STRAWBERRY_SIZE);
-    } else {
-        ctx.fillStyle = RED;
-        ctx.beginPath();
-        ctx.arc(strawberryX + STRAWBERRY_SIZE / 2, strawberryY + STRAWBERRY_SIZE / 2, STRAWBERRY_SIZE / 2, 0, Math.PI * 2);
-        ctx.fill();
-    }
+    // Disegna le fragoline
+    strawberries.forEach(strawberry => {
+        if (strawberryImage.complete && strawberryImage.naturalWidth > 0) {
+            ctx.drawImage(strawberryImage, strawberry.x, strawberry.y, STRAWBERRY_SIZE, STRAWBERRY_SIZE);
+        } else {
+            ctx.fillStyle = RED;
+            ctx.beginPath();
+            ctx.arc(strawberry.x + STRAWBERRY_SIZE / 2, strawberry.y + STRAWBERRY_SIZE / 2, STRAWBERRY_SIZE / 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    });
 
-    if (potatoImage.complete && potatoImage.naturalWidth > 0) {
-        ctx.drawImage(potatoImage, potatoX, potatoY, POTATO_SIZE, POTATO_SIZE);
-    } else {
-        ctx.fillStyle = BROWN;
-        ctx.beginPath();
-        ctx.arc(potatoX + POTATO_SIZE / 2, potatoY + POTATO_SIZE / 2, POTATO_SIZE / 2, 0, Math.PI * 2);
-        ctx.fill();
-    }
+    // Disegna le patate
+    potatoes.forEach(potato => {
+        if (potatoImage.complete && potatoImage.naturalWidth > 0) {
+            ctx.drawImage(potatoImage, potato.x, potato.y, POTATO_SIZE, POTATO_SIZE);
+        } else {
+            ctx.fillStyle = BROWN;
+            ctx.beginPath();
+            ctx.arc(potato.x + POTATO_SIZE / 2, potato.y + POTATO_SIZE / 2, POTATO_SIZE / 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    });
 
     ctx.fillStyle = FONT_COLOR;
     ctx.font = `${FONT_SIZE}px ${FONT_FAMILY}`;
@@ -402,7 +466,6 @@ window.addEventListener('keydown', (e) => {
     if (gameOver && e.key === 'r') {
         resetGame();
         loop();
-        // Se la musica era attiva prima del Game Over, riavviala
         if (isMusicPlaying) {
             backgroundMusic.play().catch(e => console.warn("Errore nel riavvio della musica:", e));
         }
