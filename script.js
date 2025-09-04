@@ -334,7 +334,7 @@ function updateGame() {
             bananasToRemove.push(index);
             bananasCollected += 1;
 
-            if (bananasCollected > 0 && bananasCollected % 10 === 0 && bananasCollected !== lastBananaThreshold) {
+            if (bananasCollected > 0 && bananasCollected % 20 === 0 && bananasCollected !== lastBananaThreshold) {
                 currentNumPotatoes++;
                 const newPotato = createHazardObject('potato');
                 if (newPotato) potatoes.push(newPotato);
@@ -354,7 +354,7 @@ function updateGame() {
             cucumbersToRemove.push(index);
             cucumbersCollected += 1;
 
-            if (cucumbersCollected > 0 && cucumbersCollected % 10 === 0 && cucumbersCollected !== lastCucumberThreshold) {
+            if (cucumbersCollected > 0 && cucumbersCollected % 20 === 0 && cucumbersCollected !== lastCucumberThreshold) {
                 currentNumStrawberries++;
                 const newStrawberry = createHazardObject('strawberry');
                 if (newStrawberry) strawberries.push(newStrawberry);
